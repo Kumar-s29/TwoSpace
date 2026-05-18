@@ -67,3 +67,17 @@ export const uploadImage = async (imageUri) => {
   if (!res.ok) throw { status: res.status, ...data };
   return data;
 };
+
+export const createCapsule = (body) => apiCall('POST', '/posts/capsule/create', body);
+
+export const addToCapsule = (capsuleId, body) =>
+  apiCall('POST', `/posts/capsule/${capsuleId}/add`, body);
+
+export const getCapsule = (capsuleId) =>
+  apiCall('GET', `/posts/capsule/${capsuleId}`);
+
+export const confirmCapsule = (capsuleId) =>
+  apiCall('POST', `/posts/capsule/${capsuleId}/confirm`);
+
+export const getMyCapsules = () =>
+  apiCall('GET', '/posts/capsule/my-capsules');

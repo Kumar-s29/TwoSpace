@@ -140,6 +140,17 @@ export default function TimelineScreen({ navigation }) {
       } catch (e) {}
     });
 
+    socket.on('capsule_opened', (payload) => {
+      try {
+        if (!payload || payload.roomId !== roomId) return;
+        Toast.show({
+          type: 'success',
+          text1: '🎉 A capsule just opened!',
+          text2: 'Tap Capsules to see your memories.',
+        });
+      } catch (e) {}
+    });
+
     return () => {
       try {
         socket.disconnect();
@@ -289,6 +300,15 @@ export default function TimelineScreen({ navigation }) {
               }}
             >
               <Text style={styles.sheetText}>Send Timed Wish</Text>
+            </Pressable>
+            <Pressable
+              style={styles.sheetItem}
+              onPress={() => {
+                setFabOpen(false);
+                navigation.navigate('Capsules');
+              }}
+            >
+              <Text style={styles.sheetText}>View Capsules 📦</Text>
             </Pressable>
           </View>
         </View>

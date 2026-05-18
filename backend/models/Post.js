@@ -45,6 +45,11 @@ const postSchema = new mongoose.Schema({
     ref: 'Post',
     default: null,
   },
+  capsuleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Capsule',
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

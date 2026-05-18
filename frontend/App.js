@@ -12,6 +12,8 @@ import TimelineScreen from './screens/TimelineScreen';
 import NewPostScreen from './screens/NewPostScreen';
 import WishScreen from './screens/WishScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import CapsuleScreen from './screens/CapsuleScreen';
+import CapsuleDetailScreen from './screens/CapsuleDetailScreen';
 
 const AuthStack = createNativeStackNavigator();
 const SetupStack = createNativeStackNavigator();
@@ -39,6 +41,8 @@ function AppStackNavigator() {
     <AppStack.Navigator>
       <AppStack.Screen name="Timeline" component={TimelineScreen} />
       <AppStack.Screen name="Settings" component={SettingsScreen} />
+      <AppStack.Screen name="Capsules" component={CapsuleScreen} />
+      <AppStack.Screen name="CapsuleDetail" component={CapsuleDetailScreen} />
       <AppStack.Screen
         name="NewPost"
         component={NewPostScreen}
@@ -80,4 +84,3 @@ export default function App() {
     </AuthProvider>
   );
 }
-

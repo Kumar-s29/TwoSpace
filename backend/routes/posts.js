@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const Post = require('../models/Post');
 const Room = require('../models/Room');
 const User = require('../models/User');
+const Capsule = require('../models/Capsule');
 const { notifyPartner } = require('../utils/notify');
 const multer = require('multer');
 const { uploadToCloudinary } = require('../utils/upload');
@@ -426,6 +427,238 @@ router.delete('/:id', auth, async (req, res) => {
     await Post.deleteMany({ $or: [{ _id: post._id }, { parentId: post._id }] });
 
     return res.status(200).json({ success: true });
+  } catch (err) {
+    return sendServerError(res);
+  }
+});
+
+router.post('/capsule/create', auth, async (req, res) => {
+  try {
+    const roomId = requireRoomId(req, res);
+    if (!roomId) return;
+
+    const { title, opensAt } = req.body || {};
+    const titleStr = title === undefined || title === null ? '' : String(title).trim();
+    if (!titleStr || titleStr.length === 0 || titleStr.length > 60) {
+      return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
+    }
+
+    if (!opensAt) {
+      return res.status(400).json({ success: false, error: 'INVALID_UNLOCK_DATE' });
+    }
+
+    const opensDate = new Date(opensAt);
+    if (Number.isNaN(opensDate.getTime())) {
+      return res.status(400).json({ success: false, error: 'INVALID_UNLOCK_DATE' });
+    }
+
+    const oneHourMs = 60 * 60 * 1000;
+    if (opensDate.getTime() < Date.now() + oneHourMs) {
+      return res.status(400).json({ success: false, error: 'INVALID_UNLOCK_DATE' });
+    }
+
+    const tenYearsMs = 10 * 365 * 24 * 60 * 60 * 1000;
+    if (opensDate.getTime() > Date.now() + tenYearsMs) {
+      return res.status(400).json({ success: false, error: 'UNLOCK_DATE_TOO_FAR' });
+    }
+
+    const capsule = await Capsule.create({
+      roomId,
+      createdBy: req.user._id,
+      title: titleStr,
+      opensAt: opensDate,
+      isSealed: true,
+      confirmedBy: [req.user._id],
+      status: 'collecting',
+    });
+
+    try {
+      await notifyPartner({
+        roomId,
+        senderUserId: req.user._id,
+        title: 'TwoSpace',
+        body: `${req.user.displayName} started a Memory Capsule: "${titleStr}"`,
+        data: { type: 'capsule_started', capsuleId: capsule._id.toString() },
+      });
+    } catch (err) {
+      // swallow
+    }
+
+    return res.status(200).json({ success: true, capsule });
+  } catch (err) {
+    return sendServerError(res);
+  }
+});
+
+router.get('/capsule/my-capsules', auth, async (req, res) => {
+  try {
+    const roomId = requireRoomId(req, res);
+    if (!roomId) return;
+
+    const capsules = await Capsule.find({ roomId }).sort({ createdAt: -1 }).lean();
+    return res.status(200).json({ success: true, capsules });
+  } catch (err) {
+    return sendServerError(res);
+  }
+});
+
+router.post('/capsule/:capsuleId/add', auth, async (req, res) => {
+  try {
+    const roomId = requireRoomId(req, res);
+    if (!roomId) return;
+
+    const { capsuleId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(capsuleId)) {
+      return res.status(400).json({ success: false, error: 'BAD_ID' });
+    }
+
+    const capsule = await Capsule.findById(capsuleId);
+    if (!capsule) {
+      return res.status(404).json({ success: false, error: 'CAPSULE_NOT_FOUND' });
+    }
+
+    if (capsule.roomId.toString() !== roomId.toString()) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+    }
+
+    if (capsule.status !== 'collecting') {
+      return res.status(400).json({ success: false, error: 'CAPSULE_CLOSED' });
+    }
+
+    const { content, moodTag, mediaUrl } = req.body || {};
+    const contentStr = content === undefined || content === null ? '' : String(content);
+    const trimmedContent = contentStr.trim();
+    const mediaUrlStr = mediaUrl === undefined || mediaUrl === null ? null : String(mediaUrl).trim();
+    const moodTagStr = moodTag === undefined || moodTag === null ? null : String(moodTag).trim();
+
+    if (!trimmedContent || trimmedContent.length === 0) {
+      return res.status(400).json({ success: false, error: 'CONTENT_REQUIRED' });
+    }
+    if (trimmedContent.length > 2000) {
+      return res.status(400).json({ success: false, error: 'CONTENT_TOO_LONG' });
+    }
+    if (moodTagStr && !['good', 'okay', 'low'].includes(moodTagStr)) {
+      return res.status(400).json({ success: false, error: 'INVALID_MOOD_TAG' });
+    }
+    if (mediaUrlStr) {
+      if (!mediaUrlStr.startsWith('https://res.cloudinary.com/')) {
+        return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
+      }
+      if (mediaUrlStr.length > 500) {
+        return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
+      }
+    }
+
+    const post = await Post.create({
+      roomId,
+      authorId: req.user._id,
+      type: 'post',
+      capsuleId: capsule._id,
+      content: trimmedContent,
+      moodTag: moodTagStr || null,
+      mediaUrl: mediaUrlStr || null,
+      unlocksAt: null,
+      isSealed: true,
+      parentId: null,
+    });
+
+    return res.status(200).json({ success: true, post });
+  } catch (err) {
+    return sendServerError(res);
+  }
+});
+
+router.get('/capsule/:capsuleId', auth, async (req, res) => {
+  try {
+    const roomId = requireRoomId(req, res);
+    if (!roomId) return;
+
+    const { capsuleId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(capsuleId)) {
+      return res.status(400).json({ success: false, error: 'BAD_ID' });
+    }
+
+    const capsule = await Capsule.findById(capsuleId).lean();
+    if (!capsule) {
+      return res.status(404).json({ success: false, error: 'CAPSULE_NOT_FOUND' });
+    }
+
+    if (capsule.roomId.toString() !== roomId.toString()) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+    }
+
+    const posts = await Post.find({ capsuleId: capsule._id })
+      .sort({ createdAt: 1 })
+      .populate('authorId', 'displayName')
+      .lean();
+
+    const outPosts = posts.map((p) => ({
+      _id: p._id,
+      roomId: p.roomId,
+      authorId: p.authorId && p.authorId._id ? p.authorId._id : p.authorId,
+      authorName: p.authorId && p.authorId.displayName ? p.authorId.displayName : undefined,
+      type: p.type,
+      content: capsule.isSealed ? null : p.content,
+      moodTag: p.moodTag,
+      mediaUrl: p.mediaUrl,
+      isSealed: capsule.isSealed ? true : p.isSealed,
+      createdAt: p.createdAt,
+      capsuleId: p.capsuleId,
+    }));
+
+    return res.status(200).json({ success: true, capsule, posts: outPosts });
+  } catch (err) {
+    return sendServerError(res);
+  }
+});
+
+router.post('/capsule/:capsuleId/confirm', auth, async (req, res) => {
+  try {
+    const roomId = requireRoomId(req, res);
+    if (!roomId) return;
+
+    const { capsuleId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(capsuleId)) {
+      return res.status(400).json({ success: false, error: 'BAD_ID' });
+    }
+
+    const capsule = await Capsule.findById(capsuleId);
+    if (!capsule) {
+      return res.status(404).json({ success: false, error: 'CAPSULE_NOT_FOUND' });
+    }
+
+    if (capsule.roomId.toString() !== roomId.toString()) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+    }
+
+    if (capsule.status !== 'collecting') {
+      return res.status(400).json({ success: false, error: 'CAPSULE_CLOSED' });
+    }
+
+    const alreadyConfirmed = (capsule.confirmedBy || []).some(
+      (id) => id.toString() === req.user._id.toString()
+    );
+    if (!alreadyConfirmed) {
+      capsule.confirmedBy.push(req.user._id);
+    }
+
+    if ((capsule.confirmedBy || []).length === 2) {
+      capsule.status = 'sealed';
+      try {
+        await notifyPartner({
+          roomId,
+          senderUserId: req.user._id,
+          title: 'TwoSpace',
+          body: 'Your Memory Capsule is now sealed! 🔒',
+          data: { type: 'capsule_sealed', capsuleId: capsule._id.toString() },
+        });
+      } catch (err) {
+        // swallow
+      }
+    }
+
+    await capsule.save();
+    return res.status(200).json({ success: true, capsule });
   } catch (err) {
     return sendServerError(res);
   }
