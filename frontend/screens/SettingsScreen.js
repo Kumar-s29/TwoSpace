@@ -2,12 +2,14 @@ import React, { useContext, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import dayjs from 'dayjs';
@@ -22,6 +24,10 @@ export default function SettingsScreen({ navigation }) {
   const [roomError, setRoomError] = useState('');
   const [partnerName, setPartnerName] = useState('');
   const [connectedSince, setConnectedSince] = useState('');
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeletingSpace, setIsDeletingSpace] = useState(false);
 
   const loadRoom = async () => {
     setIsLoadingRoom(true);
@@ -95,9 +101,7 @@ export default function SettingsScreen({ navigation }) {
                 }
               );
             } else {
-              Alert.alert(
-                'Please contact support to delete your space.'
-              );
+              setShowDeleteModal(true);
             }
           },
         },
@@ -182,6 +186,81 @@ export default function SettingsScreen({ navigation }) {
           </Pressable>
         </View>
       </ScrollView>
+
+      {Platform.OS === 'android' ? (
+        <Modal
+          visible={showDeleteModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            if (isDeletingSpace) return;
+            setShowDeleteModal(false);
+            setDeleteConfirmText('');
+          }}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Delete Space Permanently</Text>
+              <Text style={styles.modalDesc}>
+                Type DELETE MY SPACE below to confirm. This cannot be undone.
+              </Text>
+
+              <TextInput
+                placeholder="Type DELETE MY SPACE"
+                value={deleteConfirmText}
+                onChangeText={setDeleteConfirmText}
+                autoCapitalize="characters"
+                editable={!isDeletingSpace}
+                style={styles.modalInput}
+              />
+
+              <View style={styles.modalButtons}>
+                <Pressable
+                  onPress={() => {
+                    if (isDeletingSpace) return;
+                    setShowDeleteModal(false);
+                    setDeleteConfirmText('');
+                  }}
+                  style={[styles.modalBtn, styles.modalCancelBtn]}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </Pressable>
+
+                <Pressable
+                  disabled={deleteConfirmText !== 'DELETE MY SPACE' || isDeletingSpace}
+                  onPress={async () => {
+                    if (deleteConfirmText !== 'DELETE MY SPACE') return;
+                    if (isDeletingSpace) return;
+                    setIsDeletingSpace(true);
+                    try {
+                      await closeRoom({ confirmText: 'DELETE MY SPACE' });
+                      updateUser({ roomId: null });
+                      setShowDeleteModal(false);
+                    } catch (err) {
+                      Alert.alert('Could not delete space.');
+                    } finally {
+                      setIsDeletingSpace(false);
+                      setDeleteConfirmText('');
+                    }
+                  }}
+                  style={[
+                    styles.modalBtn,
+                    styles.modalDeleteBtn,
+                    (deleteConfirmText !== 'DELETE MY SPACE' || isDeletingSpace) &&
+                      styles.modalDeleteBtnDisabled,
+                  ]}
+                >
+                  {isDeletingSpace ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.modalDeleteText}>Delete</Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -323,5 +402,68 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     paddingVertical: 14,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+  },
+  modalTitle: {
+    color: '#DC2626',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  modalDesc: {
+    marginTop: 8,
+    color: '#6B7280',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  modalInput: {
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    color: '#111827',
+  },
+  modalButtons: {
+    marginTop: 16,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelBtn: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  modalCancelText: {
+    color: '#6B7280',
+    fontWeight: '900',
+  },
+  modalDeleteBtn: {
+    backgroundColor: '#DC2626',
+  },
+  modalDeleteBtnDisabled: {
+    backgroundColor: '#FCA5A5',
+  },
+  modalDeleteText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
   },
 });
