@@ -5,8 +5,20 @@ const Post = require('../models/Post');
 const Room = require('../models/Room');
 const User = require('../models/User');
 const { notifyPartner } = require('../utils/notify');
+const multer = require('multer');
+const { uploadToCloudinary } = require('../utils/upload');
 
 const router = express.Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('INVALID_FILE_TYPE'));
+  },
+});
 
 const sendServerError = (res) =>
   res.status(500).json({ success: false, error: 'SERVER_ERROR' });
@@ -262,6 +274,34 @@ router.post('/timed-wish', auth, async (req, res) => {
   } catch (err) {
     return sendServerError(res);
   }
+});
+
+router.post('/upload-image', auth, async (req, res) => {
+  const roomId = requireRoomId(req, res);
+  if (!roomId) return;
+
+  return upload.single('image')(req, res, async (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, error: 'FILE_TOO_LARGE' });
+      }
+      if (err.message === 'INVALID_FILE_TYPE') {
+        return res.status(400).json({ success: false, error: 'INVALID_FILE_TYPE' });
+      }
+      return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'NO_FILE' });
+    }
+
+    try {
+      const mediaUrl = await uploadToCloudinary(req.file.buffer, req.file.mimetype);
+      return res.status(200).json({ success: true, mediaUrl });
+    } catch (uploadErr) {
+      return sendServerError(res);
+    }
+  });
 });
 
 router.post('/:id/reply', auth, async (req, res) => {

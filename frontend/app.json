@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "TwoSpace",
+    "slug": "twospace",
+    "scheme": "twospace",
+    "version": "1.0.0",
+    "platforms": ["ios", "android"],
+    "android": {
+      "package": "com.twospace.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "twospace", "host": "join" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.twospace.app"
+    }
+  }
+}
