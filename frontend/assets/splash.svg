@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" 
+     width="1284" height="2778" viewBox="0 0 1284 2778">
+  <rect width="1284" height="2778" fill="#4F46B8"/>
+  <circle cx="572" cy="1320" r="130" fill="none" 
+          stroke="white" stroke-width="38" opacity="0.92"/>
+  <circle cx="712" cy="1320" r="130" fill="none" 
+          stroke="white" stroke-width="38" opacity="0.92"/>
+  <clipPath id="lc2">
+    <circle cx="572" cy="1320" r="128"/>
+  </clipPath>
+  <circle cx="712" cy="1320" r="128" 
+          fill="white" opacity="0.15" clip-path="url(#lc2)"/>
+  <text x="642" y="1510" 
+        font-family="system-ui, sans-serif"
+        font-size="96" font-weight="700"
+        fill="white" text-anchor="middle">TwoSpace</text>
+  <text x="642" y="1600"
+        font-family="system-ui, sans-serif"  
+        font-size="48" font-weight="400"
+        fill="white" opacity="0.7" 
+        text-anchor="middle">Your private space</text>
+</svg>

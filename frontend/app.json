@@ -5,8 +5,18 @@
     "scheme": "twospace",
     "version": "1.0.0",
     "platforms": ["ios", "android"],
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4F46B8"
+    },
     "android": {
       "package": "com.twospace.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#4F46B8"
+      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -16,7 +26,8 @@
       ]
     },
     "ios": {
-      "bundleIdentifier": "com.twospace.app"
+      "bundleIdentifier": "com.twospace.app",
+      "supportsTablet": false
     }
   }
 }
