@@ -27,6 +27,7 @@ export default function CapsuleScreen({ navigation }) {
   const [title, setTitle] = useState('');
   const [opensAt, setOpensAt] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [didPickDate, setDidPickDate] = useState(false);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -66,6 +67,7 @@ export default function CapsuleScreen({ navigation }) {
   const resetModal = () => {
     setTitle('');
     setOpensAt(null);
+    setDidPickDate(false);
     setTempDate(null);
     setShowDatePicker(false);
     setShowTimePicker(false);
@@ -78,15 +80,24 @@ export default function CapsuleScreen({ navigation }) {
     return { bg: '#E5E7EB', fg: '#111827', text: status || 'Unknown' };
   };
 
-  const canCreate = title.trim().length > 0 && title.trim().length <= 60 && opensAt;
+  const isDateTooSoon = useMemo(() => {
+    if (!opensAt) return false;
+    return opensAt.getTime() < Date.now() + 60 * 60 * 1000;
+  }, [opensAt]);
+
+  const canCreate =
+    title.trim().length > 0 && title.trim().length <= 60 && opensAt && !isDateTooSoon;
 
   const submitCreate = async () => {
-    if (!canCreate || isCreating) return;
+    if (isCreating) return;
     const trimmedTitle = title.trim();
     const date = opensAt;
     if (!trimmedTitle || trimmedTitle.length > 60) return;
     if (!date) return;
-    if (date.getTime() < Date.now() + 60 * 60 * 1000) return;
+    if (date.getTime() < Date.now() + 60 * 60 * 1000) {
+      Alert.alert('Pick a later time', 'Please choose a time at least 1 hour from now.');
+      return;
+    }
     setIsCreating(true);
     try {
       await createCapsule({ title: trimmedTitle, opensAt: date.toISOString() });
@@ -227,9 +238,16 @@ export default function CapsuleScreen({ navigation }) {
                 display="spinner"
                 minimumDate={minDate}
                 onChange={(event, selected) => {
-                  if (selected) setOpensAt(selected);
+                  if (selected) {
+                    setOpensAt(selected);
+                    setDidPickDate(true);
+                  }
                 }}
               />
+            ) : null}
+
+            {didPickDate && isDateTooSoon ? (
+              <Text style={styles.dateError}>Please choose a time at least 1 hour from now.</Text>
             ) : null}
 
             {Platform.OS === 'android' && showDatePicker ? (
@@ -265,6 +283,7 @@ export default function CapsuleScreen({ navigation }) {
                     const combined = new Date(tempDate);
                     combined.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
                     setOpensAt(combined);
+                    setDidPickDate(true);
                   }
                   setShowTimePicker(false);
                   setTempDate(null);
@@ -475,6 +494,12 @@ const styles = StyleSheet.create({
     color: '#4F46B8',
     fontWeight: '900',
   },
+  dateError: {
+    marginTop: 8,
+    color: '#DC2626',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   modalButtons: {
     marginTop: 16,
     flexDirection: 'row',
@@ -507,4 +532,3 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 });
-
