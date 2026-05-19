@@ -4,7 +4,18 @@
     "slug": "twospace",
     "scheme": "twospace",
     "version": "1.0.0",
-    "platforms": ["ios", "android"],
+    "updates": {
+      "url": "https://u.expo.dev/c67db40f-a887-403f-a51b-775b2099343e",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",
@@ -20,14 +31,28 @@
       "intentFilters": [
         {
           "action": "VIEW",
-          "data": [{ "scheme": "twospace", "host": "join" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "twospace",
+              "host": "join"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
     "ios": {
       "bundleIdentifier": "com.twospace.app",
       "supportsTablet": false
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c67db40f-a887-403f-a51b-775b2099343e"
+      }
+    },
+    "owner": "kumar_s29"
   }
 }
