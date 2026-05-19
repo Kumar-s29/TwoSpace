@@ -102,12 +102,15 @@ const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+    marginHorizontal: 0,
   },
   wrapperOwn: {
     marginLeft: 48,
+    marginRight: 0,
   },
   wrapperPartner: {
     marginRight: 48,
+    marginLeft: 0,
   },
   row: {
     flexDirection: 'row',

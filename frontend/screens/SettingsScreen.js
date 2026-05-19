@@ -5,7 +5,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import dayjs from 'dayjs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthContext } from '../context/AuthContext';
 import { archiveRoom, closeRoom, getMyRoom } from '../services/api';
@@ -126,7 +126,9 @@ export default function SettingsScreen({ navigation }) {
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backArrow}>←</Text>
+          <Text style={styles.backArrow} numberOfLines={1}>
+            ‹ Back
+          </Text>
         </Pressable>
         <Text style={styles.headerTitle}>Settings</Text>
         <View style={{ width: 32 }} />
@@ -280,15 +282,15 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
   },
   backBtn: {
-    width: 32,
+    width: 72,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backArrow: {
     color: '#4F46B8',
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
   },
   headerTitle: {
     color: '#111827',

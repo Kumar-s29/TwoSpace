@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import { AuthContext, AuthProvider } from './context/AuthContext';
 
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
+import SplashScreen from './screens/SplashScreen';
 import SetupScreen from './screens/SetupScreen';
 import TimelineScreen from './screens/TimelineScreen';
 import NewPostScreen from './screens/NewPostScreen';
@@ -21,7 +22,7 @@ const AppStack = createNativeStackNavigator();
 
 function AuthStackNavigator() {
   return (
-    <AuthStack.Navigator>
+    <AuthStack.Navigator screenOptions={{ headerShown: false }}>
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
     </AuthStack.Navigator>
@@ -30,7 +31,7 @@ function AuthStackNavigator() {
 
 function SetupStackNavigator() {
   return (
-    <SetupStack.Navigator>
+    <SetupStack.Navigator screenOptions={{ headerShown: false }}>
       <SetupStack.Screen name="Setup" component={SetupScreen} />
     </SetupStack.Navigator>
   );
@@ -38,7 +39,7 @@ function SetupStackNavigator() {
 
 function AppStackNavigator() {
   return (
-    <AppStack.Navigator>
+    <AppStack.Navigator screenOptions={{ headerShown: false }}>
       <AppStack.Screen name="Timeline" component={TimelineScreen} />
       <AppStack.Screen name="Settings" component={SettingsScreen} />
       <AppStack.Screen name="Capsules" component={CapsuleScreen} />
@@ -76,11 +77,16 @@ function RootNavigator() {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
   return (
     <AuthProvider>
       <NavigationContainer>
         <RootNavigator />
       </NavigationContainer>
+      {showSplash ? (
+        <SplashScreen onFinish={() => setShowSplash(false)} />
+      ) : null}
     </AuthProvider>
   );
 }

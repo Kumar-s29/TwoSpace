@@ -6,7 +6,6 @@ import {
   Modal,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
@@ -16,6 +15,7 @@ import Toast from 'react-native-toast-message';
 import { io } from 'socket.io-client';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthContext } from '../context/AuthContext';
 import { addToCapsule, confirmCapsule, getCapsule, getMyRoom } from '../services/api';
@@ -273,9 +273,11 @@ export default function CapsuleDetailScreen({ navigation, route }) {
     <>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backArrow}>←</Text>
+          <Text style={styles.backArrow} numberOfLines={1}>
+            ‹ Back
+          </Text>
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
+        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
           {capsule?.title || 'Capsule'}
         </Text>
         <View style={{ width: 32 }} />
@@ -306,9 +308,13 @@ export default function CapsuleDetailScreen({ navigation, route }) {
       <SafeAreaView style={styles.screen}>
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backArrow}>←</Text>
+            <Text style={styles.backArrow} numberOfLines={1}>
+              ‹ Back
+            </Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Capsule</Text>
+          <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+            {capsule?.title || 'Capsule'}
+          </Text>
           <View style={{ width: 32 }} />
         </View>
         <View style={styles.center}>
@@ -414,9 +420,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backArrow: { color: '#4F46B8', fontSize: 20, fontWeight: '800' },
-  headerTitle: { flex: 1, textAlign: 'center', color: '#111827', fontSize: 16, fontWeight: '800' },
+  backBtn: { width: 72, height: 32, alignItems: 'center', justifyContent: 'center' },
+  backArrow: { color: '#4F46B8', fontSize: 16, fontWeight: '700' },
+  headerTitle: { flex: 2, textAlign: 'center', color: '#111827', fontSize: 17, fontWeight: '800' },
   statusBar: {
     paddingVertical: 10,
     paddingHorizontal: 16,
@@ -507,4 +513,3 @@ const styles = StyleSheet.create({
   modalAddDisabled: { backgroundColor: '#C7D2FE' },
   modalAddText: { color: '#FFFFFF', fontWeight: '900' },
 });
-

@@ -4,7 +4,6 @@ import {
   Alert,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createWish } from '../services/api';
 
@@ -133,7 +133,7 @@ export default function WishScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} disabled={isSubmitting}>
           <Text style={styles.cancel}>Cancel</Text>
@@ -145,13 +145,13 @@ export default function WishScreen({ navigation }) {
           {isSubmitting ? (
             <ActivityIndicator color="#C2185B" />
           ) : (
-            <Text style={[styles.send, !canSend && styles.sendDisabled]}>🔒 Seal &amp; Send</Text>
+            <Text style={[styles.send, !canSend && styles.sendDisabled]}>🔒 Seal & Send</Text>
           )}
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.sectionLabel}>What&apos;s the occasion?</Text>
+        <Text style={styles.sectionLabel}>What's the occasion?</Text>
         <TextInput
           value={label}
           onChangeText={setLabel}
@@ -219,8 +219,8 @@ export default function WishScreen({ navigation }) {
 
         <View style={styles.callout}>
           <Text style={styles.calloutText}>
-            💌 Your message will stay sealed until the moment you choose. They&apos;ll know something is waiting —
-            but they can&apos;t open it early.
+            💌 Your message will stay sealed until the moment you choose. They'll know something is waiting —
+            but they can't open it early.
           </Text>
         </View>
       </ScrollView>
@@ -325,4 +325,3 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
-

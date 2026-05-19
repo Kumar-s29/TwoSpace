@@ -4,13 +4,14 @@ import {
   Alert,
   Image,
   Pressable,
-  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createPost, uploadImage } from '../services/api';
 import MoodPicker from '../components/MoodPicker';
@@ -126,7 +127,11 @@ export default function NewPostScreen({ navigation }) {
         </Pressable>
       </View>
 
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {imageUri ? (
           <View style={styles.imageWrap}>
             <Image source={{ uri: imageUri }} style={styles.image} />
@@ -160,11 +165,13 @@ export default function NewPostScreen({ navigation }) {
         </View>
 
         <MoodPicker value={moodTag} onChange={setMoodTag} />
-      </View>
+      </ScrollView>
 
-      <Pressable onPress={onPickImage} style={styles.imageBar} disabled={isSubmitting}>
+      <View style={styles.imageBar}>
+        <Pressable onPress={onPickImage} disabled={isSubmitting}>
         <Text style={styles.imageBarText}>📷 Add Photo</Text>
-      </Pressable>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -205,9 +212,12 @@ const styles = StyleSheet.create({
   postDisabled: {
     color: '#9CA3AF',
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 16,
+    paddingBottom: 8,
   },
   input: {
     width: '100%',
@@ -215,7 +225,7 @@ const styles = StyleSheet.create({
     color: '#111827',
     padding: 0,
     marginTop: 8,
-    minHeight: 140,
+    minHeight: 120,
     textAlignVertical: 'top',
   },
   counterRow: {
@@ -229,8 +239,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   imageBarText: {
     color: '#6B7280',

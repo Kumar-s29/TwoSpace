@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { io } from 'socket.io-client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthContext } from '../context/AuthContext';
 import { getMyRoom, getTimeline } from '../services/api';
@@ -192,7 +193,10 @@ export default function TimelineScreen({ navigation }) {
   };
 
   const renderItem = ({ item }) => {
-    const isOwn = item?.authorId === user?._id;
+    const isOwn =
+      item?.authorId != null &&
+      user?._id != null &&
+      item.authorId.toString() === user._id.toString();
     if (item?.type === 'timed-wish' && item?.isSealed === true) {
       return <LockedWishCard post={item} isOwn={isOwn} />;
     }
@@ -221,25 +225,29 @@ export default function TimelineScreen({ navigation }) {
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator />
-      </View>
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.center}>
+          <ActivityIndicator />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (errorText && posts.length === 0) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{errorText}</Text>
-        <Pressable onPress={onRefresh} style={styles.retryButton}>
-          <Text style={styles.retryText}>Retry</Text>
-        </Pressable>
-      </View>
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.center}>
+          <Text style={styles.errorText}>{errorText}</Text>
+          <Pressable onPress={onRefresh} style={styles.retryButton}>
+            <Text style={styles.retryText}>Retry</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen}>
       <Header />
 
       {posts.length === 0 ? (
@@ -257,6 +265,8 @@ export default function TimelineScreen({ navigation }) {
           renderItem={renderItem}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
+          style={{ backgroundColor: '#FFFFFF' }}
+          contentContainerStyle={{ backgroundColor: '#FFFFFF', paddingBottom: 80 }}
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
           }
@@ -315,7 +325,7 @@ export default function TimelineScreen({ navigation }) {
       </Modal>
 
       <Toast />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -373,6 +383,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
+    backgroundColor: '#FFFFFF',
   },
   emptyIllustration: {
     fontSize: 40,
