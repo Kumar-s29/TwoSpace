@@ -226,8 +226,10 @@ export default function TimelineScreen({ navigation }) {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.screen}>
-        <View style={styles.center}>
-          <ActivityIndicator />
+        <View style={styles.contentCard}>
+          <View style={styles.center}>
+            <ActivityIndicator />
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -236,11 +238,13 @@ export default function TimelineScreen({ navigation }) {
   if (errorText && posts.length === 0) {
     return (
       <SafeAreaView style={styles.screen}>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{errorText}</Text>
-          <Pressable onPress={onRefresh} style={styles.retryButton}>
-            <Text style={styles.retryText}>Retry</Text>
-          </Pressable>
+        <View style={styles.contentCard}>
+          <View style={styles.center}>
+            <Text style={styles.errorText}>{errorText}</Text>
+            <Pressable onPress={onRefresh} style={styles.retryButton}>
+              <Text style={styles.retryText}>Retry</Text>
+            </Pressable>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -250,6 +254,7 @@ export default function TimelineScreen({ navigation }) {
     <SafeAreaView style={styles.screen}>
       <Header />
 
+      <View style={styles.contentCard}>
       {posts.length === 0 ? (
         <View style={styles.center}>
           <Text style={styles.emptyIllustration}>✨</Text>
@@ -279,6 +284,7 @@ export default function TimelineScreen({ navigation }) {
           }
         />
       )}
+      </View>
 
       <Pressable style={styles.fab} onPress={() => setFabOpen(true)}>
         <Text style={styles.fabText}>+</Text>
@@ -332,7 +338,14 @@ export default function TimelineScreen({ navigation }) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: '#4F46B8',
+  },
+  contentCard: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
   },
   header: {
     paddingTop: 14,
@@ -341,11 +354,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    backgroundColor: '#4F46B8',
   },
   headerLeft: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#4F46B8',
+    color: '#FFFFFF',
   },
   headerRight: {
     flexDirection: 'row',
@@ -358,6 +372,7 @@ const styles = StyleSheet.create({
   },
   gear: {
     fontSize: 18,
+    color: '#FFFFFF',
   },
   partnerWrap: {
     flexDirection: 'row',
@@ -366,17 +381,15 @@ const styles = StyleSheet.create({
     maxWidth: 180,
   },
   partnerName: {
-    color: '#111827',
+    color: '#FFFFFF',
     fontWeight: '700',
   },
   dot: {
-    color: '#22C55E',
+    color: '#4ADE80',
     fontSize: 12,
   },
   divider: {
-    height: 2,
-    backgroundColor: '#4F46B8',
-    opacity: 0.25,
+    height: 0,
   },
   center: {
     flex: 1,

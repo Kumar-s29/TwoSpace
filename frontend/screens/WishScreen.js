@@ -133,7 +133,7 @@ export default function WishScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46B8' }}>
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} disabled={isSubmitting}>
           <Text style={styles.cancel}>Cancel</Text>
@@ -150,7 +150,16 @@ export default function WishScreen({ navigation }) {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={{
+          flex: 1,
+          backgroundColor: '#FFFFFF',
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+        }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 32 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={styles.sectionLabel}>What's the occasion?</Text>
         <TextInput
           value={label}
@@ -239,26 +248,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#4F46B8',
+    borderBottomWidth: 0,
   },
   cancel: {
-    color: '#6B7280',
+    color: 'rgba(255,255,255,0.8)',
     fontSize: 15,
     fontWeight: '600',
   },
   headerTitle: {
-    color: '#111827',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
   },
   send: {
-    color: '#C2185B',
+    color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '900',
+    fontWeight: '800',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   sendDisabled: {
-    color: '#9CA3AF',
+    color: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   content: {
     padding: 16,

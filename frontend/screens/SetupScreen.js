@@ -187,68 +187,70 @@ export default function SetupScreen() {
           <Text style={styles.subtitle}>Connect with someone special</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Create your invite link</Text>
-          <Text style={styles.cardDesc}>
-            Generate a private link and share it with one person. Once they join, your space is sealed.
-          </Text>
+        <View style={styles.contentCard}>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Create your invite link</Text>
+            <Text style={styles.cardDesc}>
+              Generate a private link and share it with one person. Once they join, your space is sealed.
+            </Text>
 
-          {httpsLink ? (
-            <>
-              <View style={styles.linkRow}>
-                <View style={styles.linkBox}>
-                  <Text style={styles.linkText} numberOfLines={2}>
-                    {httpsLink}
+            {httpsLink ? (
+              <>
+                <View style={styles.linkRow}>
+                  <View style={styles.linkBox}>
+                    <Text style={styles.linkText} numberOfLines={2}>
+                      {httpsLink}
+                    </Text>
+                  </View>
+                  <Pressable onPress={onCopy} style={styles.outlineButton}>
+                    <Text style={styles.outlineButtonText}>Copy Link</Text>
+                  </Pressable>
+                </View>
+
+                {copiedVisible ? <Text style={styles.copied}>Copied!</Text> : null}
+
+                <Pressable onPress={onShare} style={[styles.outlineButton, styles.shareButton]}>
+                  <Text style={styles.outlineButtonText}>Share Link</Text>
+                </Pressable>
+
+                {remaining ? (
+                  <Text style={styles.expiry}>
+                    This link expires in {remaining.hours} hours {remaining.minutes} minutes
+                  </Text>
+                ) : null}
+
+                <Text style={styles.note}>Or share this deep link for app users:</Text>
+                <View style={styles.deepLinkBox}>
+                  <Text style={styles.deepLinkText} numberOfLines={2}>
+                    {deepLink}
                   </Text>
                 </View>
-                <Pressable onPress={onCopy} style={styles.outlineButton}>
-                  <Text style={styles.outlineButtonText}>Copy Link</Text>
-                </Pressable>
-              </View>
-
-              {copiedVisible ? <Text style={styles.copied}>Copied!</Text> : null}
-
-              <Pressable onPress={onShare} style={[styles.outlineButton, styles.shareButton]}>
-                <Text style={styles.outlineButtonText}>Share Link</Text>
+              </>
+            ) : (
+              <Pressable
+                onPress={onGenerate}
+                disabled={isGenerating || isCheckingRoom}
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  (isGenerating || isCheckingRoom) && styles.primaryButtonDisabled,
+                  pressed && !(isGenerating || isCheckingRoom) ? styles.primaryButtonPressed : null,
+                ]}
+              >
+                {isGenerating || isCheckingRoom ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Generate Link</Text>
+                )}
               </Pressable>
+            )}
 
-              {remaining ? (
-                <Text style={styles.expiry}>
-                  This link expires in {remaining.hours} hours {remaining.minutes} minutes
-                </Text>
-              ) : null}
+            {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+          </View>
 
-              <Text style={styles.note}>Or share this deep link for app users:</Text>
-              <View style={styles.deepLinkBox}>
-                <Text style={styles.deepLinkText} numberOfLines={2}>
-                  {deepLink}
-                </Text>
-              </View>
-            </>
-          ) : (
-            <Pressable
-              onPress={onGenerate}
-              disabled={isGenerating || isCheckingRoom}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                (isGenerating || isCheckingRoom) && styles.primaryButtonDisabled,
-                pressed && !(isGenerating || isCheckingRoom) ? styles.primaryButtonPressed : null,
-              ]}
-            >
-              {isGenerating || isCheckingRoom ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Generate Link</Text>
-              )}
-            </Pressable>
-          )}
-
-          {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+          <Pressable onPress={logout} style={styles.logout}>
+            <Text style={styles.logoutTextInner}>Log Out</Text>
+          </Pressable>
         </View>
-
-        <Pressable onPress={logout} style={styles.logout}>
-          <Text style={styles.logoutText}>Log Out</Text>
-        </Pressable>
       </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -258,7 +260,7 @@ export default function SetupScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#4F46B8',
   },
   container: {
     flex: 1,
@@ -272,14 +274,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 40,
     fontWeight: '800',
-    color: '#4F46B8',
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   subtitle: {
     marginTop: 6,
     fontSize: 16,
-    color: '#6B7280',
+    color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
+  },
+  contentCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    justifyContent: 'space-between',
   },
   card: {
     backgroundColor: '#F9FAFB',
@@ -396,6 +406,11 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   logoutText: {
+    textAlign: 'center',
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+  },
+  logoutTextInner: {
     textAlign: 'center',
     color: '#6B7280',
     fontSize: 14,

@@ -271,18 +271,6 @@ export default function CapsuleDetailScreen({ navigation, route }) {
 
   const ListHeader = (
     <>
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backArrow} numberOfLines={1}>
-            ‹ Back
-          </Text>
-        </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-          {capsule?.title || 'Capsule'}
-        </Text>
-        <View style={{ width: 32 }} />
-      </View>
-
       <View style={[styles.statusBar, { backgroundColor: meta.bg }]}>
         <Text style={[styles.statusBarText, { color: meta.fg }]}>{meta.text}</Text>
       </View>
@@ -296,8 +284,22 @@ export default function CapsuleDetailScreen({ navigation, route }) {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.screen}>
-        <View style={styles.center}>
-          <ActivityIndicator />
+        <View style={styles.header}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Text style={styles.backArrow} numberOfLines={1}>
+              ‹ Back
+            </Text>
+          </Pressable>
+          <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+            {capsule?.title || 'Capsule'}
+          </Text>
+          <View style={{ width: 32 }} />
+        </View>
+
+        <View style={styles.contentCard}>
+          <View style={styles.center}>
+            <ActivityIndicator />
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -317,11 +319,13 @@ export default function CapsuleDetailScreen({ navigation, route }) {
           </Text>
           <View style={{ width: 32 }} />
         </View>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{errorText}</Text>
-          <Pressable style={styles.retryButton} onPress={load}>
-            <Text style={styles.retryText}>Retry</Text>
-          </Pressable>
+        <View style={styles.contentCard}>
+          <View style={styles.center}>
+            <Text style={styles.errorText}>{errorText}</Text>
+            <Pressable style={styles.retryButton} onPress={load}>
+              <Text style={styles.retryText}>Retry</Text>
+            </Pressable>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -329,6 +333,19 @@ export default function CapsuleDetailScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <View style={styles.header}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Text style={styles.backArrow} numberOfLines={1}>
+            ‹ Back
+          </Text>
+        </Pressable>
+        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+          {capsule?.title || 'Capsule'}
+        </Text>
+        <View style={{ width: 32 }} />
+      </View>
+
+      <View style={styles.contentCard}>
       <FlatList
         data={posts}
         keyExtractor={(item) => item._id}
@@ -337,6 +354,7 @@ export default function CapsuleDetailScreen({ navigation, route }) {
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
       />
+      </View>
 
       <Modal
         visible={showAddModal}
@@ -400,7 +418,14 @@ export default function CapsuleDetailScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#FFFFFF' },
+  screen: { flex: 1, backgroundColor: '#4F46B8' },
+  contentCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+  },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
   errorText: { textAlign: 'center', color: '#6B7280', fontSize: 16, marginBottom: 14 },
   retryButton: {
@@ -417,12 +442,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#4F46B8',
+    borderBottomWidth: 0,
   },
   backBtn: { width: 72, height: 32, alignItems: 'center', justifyContent: 'center' },
-  backArrow: { color: '#4F46B8', fontSize: 16, fontWeight: '700' },
-  headerTitle: { flex: 2, textAlign: 'center', color: '#111827', fontSize: 17, fontWeight: '800' },
+  backArrow: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  headerTitle: { flex: 2, textAlign: 'center', color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
   statusBar: {
     paddingVertical: 10,
     paddingHorizontal: 16,

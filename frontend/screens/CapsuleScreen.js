@@ -156,8 +156,10 @@ export default function CapsuleScreen({ navigation }) {
     return (
       <SafeAreaView style={styles.screen}>
         {Header}
-        <View style={styles.center}>
-          <ActivityIndicator />
+        <View style={styles.contentCard}>
+          <View style={styles.center}>
+            <ActivityIndicator />
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -167,6 +169,7 @@ export default function CapsuleScreen({ navigation }) {
     <SafeAreaView style={styles.screen}>
       {Header}
 
+      <View style={styles.contentCard}>
       {errorText ? (
         <View style={styles.center}>
           <Text style={styles.errorText}>{errorText}</Text>
@@ -190,6 +193,7 @@ export default function CapsuleScreen({ navigation }) {
           }
         />
       )}
+      </View>
 
       <Modal
         visible={showModal}
@@ -331,7 +335,14 @@ export default function CapsuleScreen({ navigation }) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: '#4F46B8',
+  },
+  contentCard: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
   },
   header: {
     height: 52,
@@ -339,8 +350,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#4F46B8',
+    borderBottomWidth: 0,
   },
   backBtn: {
     width: 72,
@@ -349,12 +360,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backArrow: {
-    color: '#4F46B8',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
   },
   headerTitle: {
-    color: '#111827',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
   },
@@ -362,7 +373,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 10,
-    backgroundColor: '#4F46B8',
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   newBtnText: {
     color: '#FFFFFF',

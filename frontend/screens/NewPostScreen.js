@@ -128,7 +128,14 @@ export default function NewPostScreen({ navigation }) {
       </View>
 
       <ScrollView
-        style={styles.scrollView}
+        style={[
+          styles.scrollView,
+          {
+            backgroundColor: '#FFFFFF',
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+          },
+        ]}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
@@ -179,7 +186,7 @@ export default function NewPostScreen({ navigation }) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#4F46B8',
   },
   header: {
     height: 52,
@@ -187,30 +194,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#4F46B8',
+    borderBottomWidth: 0,
   },
   cancel: {
-    color: '#6B7280',
+    color: 'rgba(255,255,255,0.8)',
     fontSize: 15,
     fontWeight: '600',
   },
   headerTitle: {
-    color: '#111827',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
   },
   post: {
-    color: '#4F46B8',
+    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '800',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   postUploading: {
-    color: '#9CA3AF',
+    color: 'rgba(255,255,255,0.7)',
     fontWeight: '700',
   },
   postDisabled: {
-    color: '#9CA3AF',
+    color: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   scrollView: {
     flex: 1,
@@ -239,6 +251,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
   imageBarText: {
     color: '#6B7280',

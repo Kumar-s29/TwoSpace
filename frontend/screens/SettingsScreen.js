@@ -134,7 +134,15 @@ export default function SettingsScreen({ navigation }) {
         <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        style={{
+          flex: 1,
+          backgroundColor: '#FFFFFF',
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+        }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 28 }}
+      >
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Profile</Text>
           <Text style={styles.profileName}>{profileName}</Text>
@@ -270,7 +278,7 @@ export default function SettingsScreen({ navigation }) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#4F46B8',
   },
   header: {
     height: 52,
@@ -278,8 +286,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#4F46B8',
+    borderBottomWidth: 0,
   },
   backBtn: {
     width: 72,
@@ -288,12 +296,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backArrow: {
-    color: '#4F46B8',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
   },
   headerTitle: {
-    color: '#111827',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
   },
