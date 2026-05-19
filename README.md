@@ -239,10 +239,6 @@ eas update --branch preview --message "description"
 - **Database:** MongoDB Atlas
 - **Build:** EAS Build (Expo)
 
-## Built With
-
-This app was planned, designed, and built using Claude (Anthropic) as the AI coding assistant, with Codex handling the actual code generation across all phases.
-
 ---
 
 *TwoSpace — Your private space.*
