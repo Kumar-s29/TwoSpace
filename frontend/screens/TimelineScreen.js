@@ -1,13 +1,16 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
@@ -15,7 +18,7 @@ import { io } from 'socket.io-client';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthContext } from '../context/AuthContext';
-import { getMyRoom, getTimeline, reactToPost } from '../services/api';
+import { getMyRoom, getTimeline, reactToPost, editPost } from '../services/api';
 import PostCard from '../components/PostCard';
 import LockedWishCard from '../components/LockedWishCard';
 
@@ -35,6 +38,10 @@ export default function TimelineScreen({ navigation }) {
   const [errorText, setErrorText] = useState('');
 
   const [fabOpen, setFabOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const editInputRef = useRef(null);
 
   const flatListRef = useRef(null);
   const didScrollToEndRef = useRef(false);
@@ -200,19 +207,24 @@ export default function TimelineScreen({ navigation }) {
     }
   };
 
-  const handleDelete = (postId) => {
+  const handleDelete = useCallback((postId) => {
     setPosts((prev) => prev.filter((p) => p._id !== postId));
-  };
+  }, []);
 
-  const handleEdit = (postId, newContent) => {
+  const handleEdit = useCallback((postId, newContent) => {
     setPosts((prev) =>
       prev.map((p) =>
         p._id === postId ? { ...p, content: newContent, isEdited: true } : p
       )
     );
-  };
+  }, []);
 
-  const handleReact = async (postId, emoji) => {
+  const handleEditRequest = useCallback((post) => {
+    setEditText(post.content || '');
+    setEditingPost(post);
+  }, []);
+
+  const handleReact = useCallback(async (postId, emoji) => {
     try {
       const res = await reactToPost(postId, emoji);
       setPosts((prev) =>
@@ -225,9 +237,9 @@ export default function TimelineScreen({ navigation }) {
       console.log('handleReact error full:', err);
       Alert.alert('React failed', String(msg));
     }
-  };
+  }, []);
 
-  const renderItem = ({ item }) => {
+  const renderItem = useCallback(({ item }) => {
     const isOwn =
       item?.authorId != null &&
       user?._id != null &&
@@ -241,27 +253,13 @@ export default function TimelineScreen({ navigation }) {
         isOwn={isOwn}
         onDelete={handleDelete}
         onEdit={handleEdit}
+        onEditRequest={handleEditRequest}
         reactions={item?.reactions || {}}
         currentUserId={user?._id?.toString()}
         onReact={handleReact}
       />
     );
-  };
-
-  const Header = () => (
-    <View>
-      <View style={styles.header}>
-        <Text style={styles.headerLeft}>TwoSpace</Text>
-        <View style={styles.partnerWrap}>
-          <Text style={styles.partnerName} numberOfLines={1}>
-            {partnerName || ''}
-          </Text>
-          <Text style={styles.dot}>●</Text>
-        </View>
-      </View>
-      <View style={styles.divider} />
-    </View>
-  );
+  }, [user?._id, handleDelete, handleEdit, handleEditRequest, handleReact]);
 
   if (isLoading) {
     return (
@@ -292,7 +290,18 @@ export default function TimelineScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <Header />
+      <View>
+        <View style={styles.header}>
+          <Text style={styles.headerLeft}>TwoSpace</Text>
+          <View style={styles.partnerWrap}>
+            <Text style={styles.partnerName} numberOfLines={1}>
+              {partnerName || ''}
+            </Text>
+            <Text style={styles.dot}>●</Text>
+          </View>
+        </View>
+        <View style={styles.divider} />
+      </View>
 
       <View style={styles.contentCard}>
       {posts.length === 0 ? (
@@ -312,6 +321,7 @@ export default function TimelineScreen({ navigation }) {
           onEndReachedThreshold={0.4}
           style={{ backgroundColor: '#FFFFFF' }}
           contentContainerStyle={{ backgroundColor: '#FFFFFF', paddingBottom: 80 }}
+          keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
           }
@@ -362,6 +372,104 @@ export default function TimelineScreen({ navigation }) {
       </Modal>
 
       <Toast />
+
+      {/* EDIT MODAL — at root, completely outside FlatList */}
+      <Modal
+        visible={editingPost !== null}
+        transparent
+        animationType="slide"
+        onShow={() => {
+          setTimeout(() => {
+            editInputRef.current?.focus();
+          }, 150);
+        }}
+        onRequestClose={() => {
+          setEditingPost(null);
+          setEditText('');
+        }}
+      >
+        <KeyboardAvoidingView
+          style={styles.editModalWrap}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.editModalCard}>
+            <Text style={styles.editModalTitle}>
+              Edit your post
+            </Text>
+            <TextInput
+              ref={editInputRef}
+              value={editText}
+              onChangeText={setEditText}
+              multiline
+              style={styles.editModalInput}
+              maxLength={2000}
+              placeholder="Edit your message..."
+            />
+            <Text style={styles.editCounter}>
+              {editText.length} / 2000
+            </Text>
+            <View style={styles.editModalActions}>
+              <Pressable
+                onPress={() => {
+                  setEditingPost(null);
+                  setEditText('');
+                }}
+                style={styles.editModalCancel}
+              >
+                <Text style={styles.editModalCancelText}>
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  if (!editText.trim() || !editingPost) 
+                    return;
+                  setIsSavingEdit(true);
+                  try {
+                    await editPost(
+                      editingPost._id, 
+                      editText.trim()
+                    );
+                    handleEdit(
+                      editingPost._id, 
+                      editText.trim()
+                    );
+                    setEditingPost(null);
+                  } catch (err) {
+                    const code = err?.error;
+                    if (code === 'EDIT_WINDOW_EXPIRED') {
+                      Alert.alert(
+                        'Edit window closed',
+                        'Posts can only be edited within 15 minutes.'
+                      );
+                    } else {
+                      Alert.alert('Could not save edit.');
+                    }
+                    setEditingPost(null);
+                  } finally {
+                    setIsSavingEdit(false);
+                    setEditText('');
+                  }
+                }}
+                disabled={!editText.trim() || isSavingEdit}
+                style={[
+                  styles.editModalSave,
+                  (!editText.trim() || isSavingEdit) && 
+                    { opacity: 0.5 }
+                ]}
+              >
+                {isSavingEdit
+                  ? <ActivityIndicator 
+                      color="#FFFFFF" size="small" />
+                  : <Text style={styles.editModalSaveText}>
+                      Save
+                    </Text>
+                }
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -488,5 +596,72 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#111827',
+  },
+  // Edit Modal Styles
+  editModalWrap: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  editModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 32,
+  },
+  editModalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 14,
+  },
+  editModalInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    color: '#111827',
+    minHeight: 120,
+    textAlignVertical: 'top',
+    backgroundColor: '#F9FAFB',
+  },
+  editCounter: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'right',
+    marginTop: 4,
+    marginBottom: 14,
+  },
+  editModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  editModalCancel: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  editModalCancelText: {
+    color: '#6B7280',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  editModalSave: {
+    flex: 1,
+    backgroundColor: '#4F46B8',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editModalSaveText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });

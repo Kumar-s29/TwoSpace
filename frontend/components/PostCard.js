@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Image,
   Modal,
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
-import { deletePost, editPost } from '../services/api';
+import { deletePost } from '../services/api';
 
 dayjs.extend(relativeTime);
 
@@ -24,14 +22,12 @@ export default function PostCard({
   isOwn,
   onDelete,
   onEdit,
+  onEditRequest,
   reactions,
   currentUserId,
   onReact,
 }) {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState('');
-  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const initial =
     typeof post?.authorName === 'string' && post.authorName.length > 0
@@ -48,41 +44,38 @@ export default function PostCard({
           ? { bg: '#DBEAFE', text: '🌧 Low' }
           : null;
 
-  // Safe — reactions can be undefined, null, or {}
   const safeReactions =
     reactions && typeof reactions === 'object' && !Array.isArray(reactions)
       ? reactions
       : {};
   const reactionEntries = Object.entries(safeReactions);
 
-  // canEdit: post is editable if under 15 min old and is your own post
   const createdAtMs = post?.createdAt ? new Date(post.createdAt).getTime() : 0;
   const ageMs = Date.now() - createdAtMs;
   const canEdit = isOwn && !isNaN(createdAtMs) && createdAtMs > 0 && ageMs < 15 * 60 * 1000;
 
   const onLongPress = () => {
     if (isOwn) {
-      // Build options array for own post
       const buttons = [];
-
-      // React option (you can react to your own post via Alert, even if API blocks it)
       buttons.push({
         text: 'React',
         onPress: () => setShowReactionPicker(true),
       });
 
-      // Edit — only if within 15-minute window
       if (canEdit) {
         buttons.push({
           text: 'Edit',
           onPress: () => {
-            setEditText(post?.content || '');
-            setIsEditing(true);
+            // Allow native alert dismissal animation to complete.
+            setTimeout(() => {
+              if (typeof onEditRequest === 'function') {
+                onEditRequest(post);
+              }
+            }, 300);
           },
         });
       }
 
-      // Delete
       buttons.push({
         text: 'Delete Post',
         style: 'destructive',
@@ -96,33 +89,10 @@ export default function PostCard({
         },
       });
 
-      // Cancel — must be last, style 'cancel' required for Android sheet
       buttons.push({ text: 'Cancel', style: 'cancel' });
-
       Alert.alert('Post options', null, buttons);
     } else {
-      // Partner post — show reaction picker directly
       setShowReactionPicker(true);
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editText.trim()) return;
-    setIsSavingEdit(true);
-    try {
-      await editPost(post._id, editText.trim());
-      setIsEditing(false);
-      if (typeof onEdit === 'function') onEdit(post._id, editText.trim());
-    } catch (err) {
-      const code = err?.error;
-      setIsEditing(false);
-      if (code === 'EDIT_WINDOW_EXPIRED') {
-        Alert.alert('Edit window closed', 'Posts can only be edited within 15 minutes.');
-      } else {
-        Alert.alert('Could not save edit.');
-      }
-    } finally {
-      setIsSavingEdit(false);
     }
   };
 
@@ -171,50 +141,12 @@ export default function PostCard({
           ) : null}
 
           <View style={styles.card}>
-            {/* Content or inline edit */}
-            {isEditing ? (
-              <View style={styles.editWrap}>
-                <TextInput
-                  value={editText}
-                  onChangeText={setEditText}
-                  multiline
-                  autoFocus
-                  style={styles.editInput}
-                  maxLength={2000}
-                />
-                <View style={styles.editActions}>
-                  <Pressable
-                    onPress={() => setIsEditing(false)}
-                    style={styles.editCancel}
-                  >
-                    <Text style={styles.editCancelText}>Cancel</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleSaveEdit}
-                    disabled={!editText.trim() || isSavingEdit}
-                    style={[
-                      styles.editSave,
-                      (!editText.trim() || isSavingEdit) && { opacity: 0.5 },
-                    ]}
-                  >
-                    {isSavingEdit ? (
-                      <ActivityIndicator color="#fff" size="small" />
-                    ) : (
-                      <Text style={styles.editSaveText}>Save</Text>
-                    )}
-                  </Pressable>
-                </View>
-              </View>
-            ) : (
-              <>
-                {post?.content ? (
-                  <Text style={styles.content}>{post.content}</Text>
-                ) : null}
-                {post?.isEdited ? (
-                  <Text style={styles.editedLabel}>edited</Text>
-                ) : null}
-              </>
-            )}
+            {post?.content ? (
+              <Text style={styles.content}>{post.content}</Text>
+            ) : null}
+            {post?.isEdited ? (
+              <Text style={styles.editedLabel}>edited</Text>
+            ) : null}
 
             {post?.mediaUrl ? (
               <Image
@@ -230,7 +162,7 @@ export default function PostCard({
               </View>
             ) : null}
 
-            {/* Reaction bubbles — shown when reactions exist */}
+            {/* Reaction bubbles */}
             {reactionEntries.length > 0 ? (
               <View style={styles.reactionsRow}>
                 {reactionEntries.map(([userId, emoji]) => (
@@ -408,52 +340,5 @@ const styles = StyleSheet.create({
   },
   reactionEmoji: {
     fontSize: 26,
-  },
-  // Edit mode
-  editWrap: {
-    width: '100%',
-  },
-  editInput: {
-    fontSize: 15,
-    color: '#111827',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
-    padding: 10,
-    minHeight: 80,
-    textAlignVertical: 'top',
-    backgroundColor: '#F9FAFB',
-  },
-  editActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 8,
-  },
-  editCancel: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  editCancelText: {
-    color: '#6B7280',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  editSave: {
-    backgroundColor: '#4F46B8',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  editSaveText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
   },
 });
