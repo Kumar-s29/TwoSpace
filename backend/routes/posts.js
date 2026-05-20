@@ -67,6 +67,9 @@ const sanitizePostForResponse = (postDoc) => {
     content: isSealed ? null : postDoc.content,
     moodTag: postDoc.moodTag,
     mediaUrl: postDoc.mediaUrl,
+    songUrl: postDoc.songUrl || null,
+    songTitle: postDoc.songTitle || null,
+    isPinned: postDoc.isPinned || false,
     isSealed: postDoc.isSealed,
     unlocksAt: postDoc.unlocksAt,
     parentId: postDoc.parentId,
@@ -91,10 +94,12 @@ router.get('/', auth, async (req, res) => {
     const { page, limit } = parsePageLimit(req);
 
     const typeFilter = req.query.type;
+    const pinnedOnly = req.query.pinned === 'true';
     const filter = {
       roomId,
       parentId: null,
       ...(typeFilter ? { type: typeFilter } : {}),
+      ...(pinnedOnly ? { isPinned: true } : {}),
     };
     const totalPosts = await Post.countDocuments(filter);
     const totalPages = Math.max(1, Math.ceil(totalPosts / limit));
@@ -138,14 +143,39 @@ router.post('/', auth, async (req, res) => {
     const roomId = requireRoomId(req, res);
     if (!roomId) return;
 
-    const { content, moodTag, mediaUrl } = req.body || {};
+    const { content, moodTag, mediaUrl, songUrl, songTitle } = req.body || {};
 
     const contentStr = content === undefined || content === null ? '' : String(content);
     const trimmedContent = contentStr.trim();
     const mediaUrlStr = mediaUrl === undefined || mediaUrl === null ? null : String(mediaUrl).trim();
     const moodTagStr = moodTag === undefined || moodTag === null ? null : String(moodTag).trim();
 
-    if ((!trimmedContent || trimmedContent.length === 0) && (!mediaUrlStr || mediaUrlStr.length === 0)) {
+    const songUrlStr =
+      songUrl === undefined || songUrl === null ? null : String(songUrl).trim();
+    const songTitleStr =
+      songTitle === undefined || songTitle === null ? null : String(songTitle).trim();
+
+    if (songUrlStr) {
+      const isSpotify = songUrlStr.startsWith('https://open.spotify.com/');
+      const isYouTube =
+        songUrlStr.startsWith('https://youtu.be/') ||
+        songUrlStr.startsWith('https://www.youtube.com/') ||
+        songUrlStr.startsWith('https://music.youtube.com/');
+
+      if (!isSpotify && !isYouTube) {
+        return res.status(400).json({
+          success: false,
+          error: 'INVALID_SONG_URL',
+          message: 'Only Spotify and YouTube links supported.',
+        });
+      }
+    }
+
+    if (
+      (!trimmedContent || trimmedContent.length === 0) &&
+      (!mediaUrlStr || mediaUrlStr.length === 0) &&
+      (!songUrlStr || songUrlStr.length === 0)
+    ) {
       return res.status(400).json({ success: false, error: 'CONTENT_REQUIRED' });
     }
 
@@ -173,6 +203,8 @@ router.post('/', auth, async (req, res) => {
       content: trimmedContent ? trimmedContent : null,
       moodTag: moodTagStr || null,
       mediaUrl: mediaUrlStr || null,
+      songUrl: songUrlStr || null,
+      songTitle: songTitleStr || null,
       unlocksAt: null,
       isSealed: false,
       parentId: null,
@@ -199,13 +231,7 @@ router.post('/', auth, async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      post: {
-        _id: responsePost._id,
-        type: responsePost.type,
-        content: responsePost.content,
-        moodTag: responsePost.moodTag,
-        createdAt: responsePost.createdAt,
-      },
+      post: responsePost,
     });
   } catch (err) {
     return sendServerError(res);
@@ -596,6 +622,64 @@ router.post('/:id/react', auth, async (req, res) => {
     }
 
     return res.status(200).json({ success: true, reactions: reactionsObj });
+  } catch (err) {
+    return sendServerError(res);
+  }
+});
+
+router.post('/:id/pin', auth, async (req, res) => {
+  try {
+    const roomId = requireRoomId(req, res);
+    if (!roomId) return;
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, error: 'BAD_ID' });
+    }
+
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ success: false, error: 'POST_NOT_FOUND' });
+    }
+
+    if (post.roomId.toString() !== roomId.toString()) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+    }
+
+    if (post.type === 'timed-wish') {
+      return res.status(400).json({
+        success: false,
+        error: 'CANNOT_PIN_WISH',
+        message: 'Cannot pin timed-wish type posts.',
+      });
+    }
+
+    const pinnedCount = await Post.countDocuments({
+      roomId,
+      isPinned: true,
+      parentId: null,
+    });
+
+    if (!post.isPinned && pinnedCount >= 5) {
+      return res.status(400).json({
+        success: false,
+        error: 'PIN_LIMIT',
+        message: 'Maximum 5 pinned posts allowed.',
+      });
+    }
+
+    post.isPinned = !post.isPinned;
+    await post.save();
+
+    if (req.io && typeof req.io.emit === 'function') {
+      req.io.emit('pin_updated', {
+        roomId: req.user.roomId.toString(),
+        postId: post._id.toString(),
+        isPinned: post.isPinned,
+      });
+    }
+
+    return res.status(200).json({ success: true, isPinned: post.isPinned });
   } catch (err) {
     return sendServerError(res);
   }

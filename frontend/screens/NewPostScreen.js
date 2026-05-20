@@ -24,14 +24,37 @@ export default function NewPostScreen({ navigation }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  const [songUrl, setSongUrl] = useState('');
+  const [songTitle, setSongTitle] = useState('');
+  const [showSongInput, setShowSongInput] = useState(false);
+
   const trimmed = content.trim();
+
+  const extractSongTitle = (url) => {
+    // Try to extract something readable from URL
+    if (!url) return '';
+    if (url.includes('spotify.com/track/')) {
+      return 'Spotify Track';
+    }
+    if (url.includes('spotify.com/album/')) {
+      return 'Spotify Album';
+    }
+    if (url.includes('spotify.com/playlist/')) {
+      return 'Spotify Playlist';
+    }
+    if (url.includes('youtu.be/') || url.includes('youtube.com/')) {
+      return 'YouTube Music';
+    }
+    return 'Music Link';
+  };
 
   const canPost = useMemo(() => {
     if (isSubmitting) return false;
     if (trimmed.length > 0) return true;
     if (imageUri) return true;
+    if (songUrl.trim()) return true;
     return false;
-  }, [isSubmitting, trimmed.length, imageUri]);
+  }, [isSubmitting, trimmed, imageUri, songUrl]);
 
   const counterColor = content.length > 1800 ? '#DC2626' : '#9CA3AF';
 
@@ -54,8 +77,6 @@ export default function NewPostScreen({ navigation }) {
 
   const onSubmit = async () => {
     if (!canPost) return;
-
-    if (trimmed.length === 0) return;
 
     if (trimmed.length > 2000) {
       Alert.alert('Post is too long', 'Please keep your thought under 2000 characters.');
@@ -92,9 +113,15 @@ export default function NewPostScreen({ navigation }) {
       }
 
       await createPost({
-        content: trimmed,
+        content: trimmed || null,
         moodTag,
         ...(finalMediaUrl ? { mediaUrl: finalMediaUrl } : {}),
+        ...(songUrl.trim()
+          ? {
+              songUrl: songUrl.trim(),
+              songTitle: songTitle || extractSongTitle(songUrl),
+            }
+          : {}),
       });
       navigation.goBack();
     } catch (err) {
@@ -174,11 +201,51 @@ export default function NewPostScreen({ navigation }) {
         <MoodPicker value={moodTag} onChange={setMoodTag} />
       </ScrollView>
 
-      <View style={styles.imageBar}>
-        <Pressable onPress={onPickImage} disabled={isSubmitting}>
-        <Text style={styles.imageBarText}>📷 Add Photo</Text>
+      <View style={styles.bottomBar}>
+        <Pressable onPress={onPickImage} disabled={isSubmitting} style={styles.bottomBarBtn}>
+          <Text style={styles.bottomBarText}>📷 Photo</Text>
+        </Pressable>
+
+        <View style={styles.bottomBarDivider} />
+
+        <Pressable
+          onPress={() => setShowSongInput((v) => !v)}
+          disabled={isSubmitting}
+          style={styles.bottomBarBtn}
+        >
+          <Text style={[styles.bottomBarText, songUrl && { color: '#4F46B8' }]}>
+            🎵 Song
+          </Text>
         </Pressable>
       </View>
+
+      {showSongInput ? (
+        <View style={styles.songInputWrap}>
+          <TextInput
+            value={songUrl}
+            onChangeText={(text) => {
+              setSongUrl(text);
+              setSongTitle(extractSongTitle(text));
+            }}
+            placeholder="Paste Spotify or YouTube link..."
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={styles.songInput}
+            keyboardType="url"
+            editable={!isSubmitting}
+          />
+          {songUrl ? (
+            <Pressable
+              onPress={() => {
+                setSongUrl('');
+                setSongTitle('');
+              }}
+            >
+              <Text style={styles.songClear}>✕</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -247,18 +314,48 @@ const styles = StyleSheet.create({
   counter: {
     fontSize: 12,
   },
-  imageBar: {
+  bottomBar: {
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
-    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
   },
-  imageBarText: {
+  bottomBarBtn: {
+    flex: 1,
+    padding: 14,
+    alignItems: 'center',
+  },
+  bottomBarText: {
     color: '#6B7280',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
+  },
+  bottomBarDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E7EB',
+  },
+  songInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+    gap: 10,
+  },
+  songInput: {
+    flex: 1,
+    fontSize: 13,
+    color: '#111827',
+    padding: 0,
+  },
+  songClear: {
+    color: '#9CA3AF',
+    fontSize: 16,
+    padding: 4,
   },
   imageWrap: {
     width: '100%',

@@ -8,6 +8,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -16,9 +17,10 @@ import {
 import Toast from 'react-native-toast-message';
 import { io } from 'socket.io-client';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import dayjs from 'dayjs';
 
 import { AuthContext } from '../context/AuthContext';
-import { getMyRoom, getTimeline, reactToPost, editPost } from '../services/api';
+import { getMyRoom, getTimeline, reactToPost, editPost, pinPost, getPinnedPosts } from '../services/api';
 import PostCard from '../components/PostCard';
 import LockedWishCard from '../components/LockedWishCard';
 
@@ -31,6 +33,7 @@ export default function TimelineScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [pinnedPosts, setPinnedPosts] = useState([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -85,6 +88,15 @@ export default function TimelineScreen({ navigation }) {
     setPosts((prev) => (replace ? newPosts : [...prev, ...newPosts]));
   };
 
+  const fetchPinned = async () => {
+    try {
+      const res = await getPinnedPosts();
+      setPinnedPosts(Array.isArray(res?.posts) ? res.posts : []);
+    } catch (err) {
+      // ignore
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -94,7 +106,11 @@ export default function TimelineScreen({ navigation }) {
       didScrollToEndRef.current = false;
 
       try {
-        await Promise.all([fetchRoom(), fetchPage(1, { replace: true })]);
+        await Promise.all([
+          fetchRoom(),
+          fetchPage(1, { replace: true }),
+          fetchPinned(),
+        ]);
         if (!isMounted) return;
         scrollToBottomOnce();
       } catch (err) {
@@ -171,21 +187,31 @@ export default function TimelineScreen({ navigation }) {
       } catch (e) {}
     });
 
+    socket.on('pin_updated', (payload) => {
+      try {
+        if (!payload || payload.roomId !== roomId) return;
+        handlePin(payload.postId, payload.isPinned);
+      } catch (e) {}
+    });
+
     return () => {
       try {
         socket.disconnect();
       } catch (e) {}
       socketRef.current = null;
     };
-  }, [roomId]);
+  }, [roomId, handlePin]);
 
   const onRefresh = async () => {
     setIsRefreshing(true);
     setErrorText('');
     didScrollToEndRef.current = false;
     try {
-      await fetchRoom();
-      await fetchPage(1, { replace: true });
+      await Promise.all([
+        fetchRoom(),
+        fetchPage(1, { replace: true }),
+        fetchPinned(),
+      ]);
       scrollToBottomOnce();
     } catch (err) {
       setErrorText('Could not refresh timeline.');
@@ -224,6 +250,26 @@ export default function TimelineScreen({ navigation }) {
     setEditingPost(post);
   }, []);
 
+  const handlePin = useCallback((postId, isPinned) => {
+    setPosts((prev) =>
+      prev.map((p) => (p._id === postId ? { ...p, isPinned } : p))
+    );
+    if (isPinned) {
+      setPosts((currentPosts) => {
+        const post = currentPosts.find((p) => p._id === postId);
+        if (post) {
+          setPinnedPosts((prev) => {
+            if (prev.some((p) => p._id === postId)) return prev;
+            return [...prev, { ...post, isPinned: true }];
+          });
+        }
+        return currentPosts;
+      });
+    } else {
+      setPinnedPosts((prev) => prev.filter((p) => p._id !== postId));
+    }
+  }, []);
+
   const handleReact = useCallback(async (postId, emoji) => {
     try {
       const res = await reactToPost(postId, emoji);
@@ -254,12 +300,13 @@ export default function TimelineScreen({ navigation }) {
         onDelete={handleDelete}
         onEdit={handleEdit}
         onEditRequest={handleEditRequest}
+        onPin={handlePin}
         reactions={item?.reactions || {}}
         currentUserId={user?._id?.toString()}
         onReact={handleReact}
       />
     );
-  }, [user?._id, handleDelete, handleEdit, handleEditRequest, handleReact]);
+  }, [user?._id, handleDelete, handleEdit, handleEditRequest, handlePin, handleReact]);
 
   if (isLoading) {
     return (
@@ -304,14 +351,6 @@ export default function TimelineScreen({ navigation }) {
       </View>
 
       <View style={styles.contentCard}>
-      {posts.length === 0 ? (
-        <View style={styles.center}>
-          <Text style={styles.emptyIllustration}>✨</Text>
-          <Text style={styles.emptyText}>
-            Your shared space is ready.{'\n'}Add your first thought.
-          </Text>
-        </View>
-      ) : (
         <FlatList
           ref={flatListRef}
           data={posts}
@@ -325,6 +364,60 @@ export default function TimelineScreen({ navigation }) {
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
           }
+          ListHeaderComponent={
+            pinnedPosts.length > 0 ? (
+              <View style={styles.pinnedSection}>
+                <Text style={styles.pinnedLabel}>⭐ Pinned</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.pinnedScroll}
+                >
+                  {pinnedPosts.map((post) => (
+                    <Pressable
+                      key={post._id}
+                      style={styles.pinnedCard}
+                      onLongPress={() => {
+                        Alert.alert(
+                          'Unpin this post?',
+                          (post.content || '').substring(0, 50) + '...',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                              text: 'Unpin',
+                              onPress: async () => {
+                                try {
+                                  await pinPost(post._id);
+                                  handlePin(post._id, false);
+                                } catch (err) {}
+                              },
+                            },
+                          ]
+                        );
+                      }}
+                    >
+                      <Text style={styles.pinnedCardText} numberOfLines={3}>
+                        {post.content || '📷 Photo'}
+                      </Text>
+                      <Text style={styles.pinnedCardMeta}>
+                        {dayjs(post.createdAt).format('MMM D')}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            !isLoading && posts.length === 0 ? (
+              <View style={styles.centerEmpty}>
+                <Text style={styles.emptyIllustration}>✨</Text>
+                <Text style={styles.emptyText}>
+                  Your shared space is ready.{"\n"}Add your first thought.
+                </Text>
+              </View>
+            ) : null
+          }
           ListFooterComponent={
             isLoadingMore ? (
               <View style={styles.footerLoading}>
@@ -333,7 +426,6 @@ export default function TimelineScreen({ navigation }) {
             ) : null
           }
         />
-      )}
       </View>
 
       <Pressable style={styles.fab} onPress={() => setFabOpen(true)}>
@@ -663,5 +755,52 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 15,
+  },
+  // Pinned Memories Styles
+  pinnedSection: {
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  pinnedLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#D97706',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  pinnedScroll: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  pinnedCard: {
+    width: 140,
+    height: 100,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FEF3C7',
+    borderRadius: 12,
+    padding: 10,
+    justifyContent: 'space-between',
+  },
+  pinnedCardText: {
+    fontSize: 12,
+    color: '#78350F',
+    lineHeight: 16,
+  },
+  pinnedCardMeta: {
+    fontSize: 10,
+    color: '#B45309',
+    textAlign: 'right',
+  },
+  centerEmpty: {
+    paddingVertical: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: '#FFFFFF',
   },
 });

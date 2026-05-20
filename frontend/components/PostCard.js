@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Alert,
   Image,
+  Linking,
   Modal,
   Pressable,
   StyleSheet,
@@ -11,7 +12,7 @@ import {
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
-import { deletePost } from '../services/api';
+import { deletePost, pinPost } from '../services/api';
 
 dayjs.extend(relativeTime);
 
@@ -23,6 +24,7 @@ export default function PostCard({
   onDelete,
   onEdit,
   onEditRequest,
+  onPin,
   reactions,
   currentUserId,
   onReact,
@@ -77,6 +79,25 @@ export default function PostCard({
       }
 
       buttons.push({
+        text: post?.isPinned ? 'Unpin' : 'Pin',
+        onPress: async () => {
+          try {
+            const res = await pinPost(post._id);
+            if (typeof onPin === 'function') {
+              onPin(post._id, res.isPinned);
+            }
+          } catch (err) {
+            const code = err?.error;
+            if (code === 'PIN_LIMIT') {
+              Alert.alert('Pin limit reached', 'You can only pin up to 5 posts.');
+            } else {
+              Alert.alert('Could not pin post.');
+            }
+          }
+        },
+      });
+
+      buttons.push({
         text: 'Delete Post',
         style: 'destructive',
         onPress: async () => {
@@ -92,7 +113,34 @@ export default function PostCard({
       buttons.push({ text: 'Cancel', style: 'cancel' });
       Alert.alert('Post options', null, buttons);
     } else {
-      setShowReactionPicker(true);
+      Alert.alert('Post options', null, [
+        {
+          text: 'React',
+          onPress: () => setShowReactionPicker(true),
+        },
+        {
+          text: post?.isPinned ? 'Unpin' : 'Pin ⭐',
+          onPress: async () => {
+            try {
+              const res = await pinPost(post._id);
+              if (typeof onPin === 'function') {
+                onPin(post._id, res.isPinned);
+              }
+            } catch (err) {
+              const code = err?.error;
+              if (code === 'PIN_LIMIT') {
+                Alert.alert(
+                  'Pin limit reached',
+                  'Maximum 5 pinned posts allowed.'
+                );
+              } else {
+                Alert.alert('Could not pin post.');
+              }
+            }
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
     }
   };
 
@@ -141,6 +189,10 @@ export default function PostCard({
           ) : null}
 
           <View style={styles.card}>
+            {post?.isPinned ? (
+              <Text style={styles.pinLabel}>⭐ Pinned</Text>
+            ) : null}
+
             {post?.content ? (
               <Text style={styles.content}>{post.content}</Text>
             ) : null}
@@ -154,6 +206,31 @@ export default function PostCard({
                 style={styles.postImage}
                 resizeMode="cover"
               />
+            ) : null}
+
+            {post?.songUrl ? (
+              <Pressable
+                onPress={() => {
+                  Linking.openURL(post.songUrl).catch(() => {
+                    Alert.alert(
+                      'Could not open link',
+                      'Make sure Spotify or YouTube is installed.'
+                    );
+                  });
+                }}
+                style={styles.songCard}
+              >
+                <Text style={styles.songIcon}>🎵</Text>
+                <View style={styles.songInfo}>
+                  <Text style={styles.songTitle} numberOfLines={1}>
+                    {post.songTitle || 'Music Link'}
+                  </Text>
+                  <Text style={styles.songSub} numberOfLines={1}>
+                    Tap to open
+                  </Text>
+                </View>
+                <Text style={styles.songArrow}>›</Text>
+              </Pressable>
             ) : null}
 
             {moodMeta ? (
@@ -254,6 +331,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
   },
+  pinLabel: {
+    fontSize: 10,
+    color: '#F59E0B',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
   editedLabel: {
     fontSize: 10,
     color: '#9CA3AF',
@@ -265,6 +348,36 @@ const styles = StyleSheet.create({
     aspectRatio: 4 / 3,
     borderRadius: 12,
     marginTop: 10,
+  },
+  songCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0EFFC',
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 10,
+    gap: 10,
+  },
+  songIcon: {
+    fontSize: 20,
+  },
+  songInfo: {
+    flex: 1,
+  },
+  songTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4F46B8',
+  },
+  songSub: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 1,
+  },
+  songArrow: {
+    fontSize: 18,
+    color: '#4F46B8',
+    fontWeight: '700',
   },
   moodBadge: {
     alignSelf: 'flex-start',

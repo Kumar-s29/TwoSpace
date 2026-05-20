@@ -68,6 +68,21 @@ const postSchema = new mongoose.Schema({
     ref: 'Capsule',
     default: null,
   },
+  songUrl: {
+    type: String,
+    default: null,
+    maxlength: 500,
+  },
+  songTitle: {
+    type: String,
+    default: null,
+    maxlength: 200,
+    trim: true,
+  },
+  isPinned: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

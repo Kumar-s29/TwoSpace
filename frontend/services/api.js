@@ -122,3 +122,9 @@ export const reactToPost = (postId, emoji) =>
 
 export const editPost = (postId, content) =>
   apiCall('PUT', `/posts/${postId}`, { content });
+
+export const pinPost = (postId) =>
+  apiCall('POST', `/posts/${postId}/pin`);
+
+export const getPinnedPosts = () =>
+  apiCall('GET', '/posts?pinned=true&limit=10');
