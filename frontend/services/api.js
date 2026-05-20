@@ -12,11 +12,17 @@ const getHeaders = async () => {
 
 export const apiCall = async (method, path, body = null) => {
   const headers = await getHeaders();
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers,
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+  } catch (networkErr) {
+    console.log('apiCall network error:', path, networkErr?.message);
+    throw { message: networkErr?.message || 'Network request failed', path };
+  }
   const data = await res.json();
   if (!res.ok) throw { status: res.status, ...data };
   return data;
@@ -110,3 +116,9 @@ export const uploadAudio = async (audioUri) => {
   if (!res.ok) throw { status: res.status, ...data };
   return data;
 };
+
+export const reactToPost = (postId, emoji) =>
+  apiCall('POST', `/posts/${postId}/react`, { emoji });
+
+export const editPost = (postId, content) =>
+  apiCall('PUT', `/posts/${postId}`, { content });

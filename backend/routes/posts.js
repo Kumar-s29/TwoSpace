@@ -71,6 +71,14 @@ const sanitizePostForResponse = (postDoc) => {
     unlocksAt: postDoc.unlocksAt,
     parentId: postDoc.parentId,
     createdAt: postDoc.createdAt,
+    isEdited: postDoc.isEdited || false,
+    editedAt: postDoc.editedAt || null,
+    reactions:
+      postDoc.reactions instanceof Map
+        ? Object.fromEntries(postDoc.reactions)
+        : postDoc.reactions
+          ? Object.fromEntries(Object.entries(postDoc.reactions))
+          : {},
   };
   return base;
 };
@@ -476,6 +484,118 @@ router.delete('/:id', auth, async (req, res) => {
     await Post.deleteMany({ $or: [{ _id: post._id }, { parentId: post._id }] });
 
     return res.status(200).json({ success: true });
+  } catch (err) {
+    return sendServerError(res);
+  }
+});
+
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const roomId = requireRoomId(req, res);
+    if (!roomId) return;
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, error: 'BAD_ID' });
+    }
+
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ success: false, error: 'POST_NOT_FOUND' });
+    }
+
+    if (post.roomId.toString() !== roomId.toString()) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+    }
+
+    if (post.authorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+    }
+
+    const fifteenMins = 15 * 60 * 1000;
+    if (Date.now() - post.createdAt.getTime() > fifteenMins) {
+      return res.status(400).json({ success: false, error: 'EDIT_WINDOW_EXPIRED' });
+    }
+
+    const { content } = req.body || {};
+    const contentStr = content === undefined || content === null ? '' : String(content);
+    const trimmedContent = contentStr.trim();
+    if (!trimmedContent) {
+      return res.status(400).json({ success: false, error: 'CONTENT_REQUIRED' });
+    }
+    if (trimmedContent.length > 2000) {
+      return res.status(400).json({ success: false, error: 'CONTENT_TOO_LONG' });
+    }
+
+    post.content = trimmedContent;
+    post.isEdited = true;
+    post.editedAt = new Date();
+    await post.save();
+
+    return res.status(200).json({ success: true, post: { _id: post._id, content: post.content, isEdited: post.isEdited, editedAt: post.editedAt } });
+  } catch (err) {
+    return sendServerError(res);
+  }
+});
+
+router.post('/:id/react', auth, async (req, res) => {
+  try {
+    const roomId = requireRoomId(req, res);
+    if (!roomId) return;
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, error: 'BAD_ID' });
+    }
+
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ success: false, error: 'POST_NOT_FOUND' });
+    }
+
+    if (post.roomId.toString() !== roomId.toString()) {
+      return res.status(403).json({ success: false, error: 'FORBIDDEN' });
+    }
+
+    if (post.authorId.toString() === req.user._id.toString()) {
+      return res.status(400).json({ success: false, error: 'CANNOT_REACT_OWN' });
+    }
+
+    const { emoji } = req.body || {};
+    const VALID_EMOJIS = ['❤️', '🥹', '😂', '🔥', '🫂'];
+    if (!emoji || !VALID_EMOJIS.includes(emoji)) {
+      return res.status(400).json({ success: false, error: 'INVALID_EMOJI' });
+    }
+
+    const userId = req.user._id.toString();
+    const current = post.reactions.get(userId);
+
+    if (current === emoji) {
+      // Toggle off — same emoji tapped again
+      post.reactions.delete(userId);
+    } else {
+      // Set new or different emoji
+      post.reactions.set(userId, emoji);
+    }
+
+    await post.save();
+
+    const reactionsObj =
+      post.reactions instanceof Map
+        ? Object.fromEntries(post.reactions)
+        : post.reactions
+          ? Object.fromEntries(Object.entries(post.reactions))
+          : {};
+
+    if (req.io && typeof req.io.emit === 'function') {
+      req.io.emit('reaction_updated', {
+        roomId: req.user.roomId.toString(),
+        postId: post._id.toString(),
+        reactions: reactionsObj,
+      });
+    }
+
+    return res.status(200).json({ success: true, reactions: reactionsObj });
   } catch (err) {
     return sendServerError(res);
   }

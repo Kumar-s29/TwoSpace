@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -14,7 +15,7 @@ import { io } from 'socket.io-client';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthContext } from '../context/AuthContext';
-import { getMyRoom, getTimeline } from '../services/api';
+import { getMyRoom, getTimeline, reactToPost } from '../services/api';
 import PostCard from '../components/PostCard';
 import LockedWishCard from '../components/LockedWishCard';
 
@@ -152,6 +153,17 @@ export default function TimelineScreen({ navigation }) {
       } catch (e) {}
     });
 
+    socket.on('reaction_updated', (payload) => {
+      try {
+        if (!payload || payload.roomId !== roomId) return;
+        setPosts((prev) =>
+          prev.map((p) =>
+            p._id === payload.postId ? { ...p, reactions: payload.reactions } : p
+          )
+        );
+      } catch (e) {}
+    });
+
     return () => {
       try {
         socket.disconnect();
@@ -192,6 +204,29 @@ export default function TimelineScreen({ navigation }) {
     setPosts((prev) => prev.filter((p) => p._id !== postId));
   };
 
+  const handleEdit = (postId, newContent) => {
+    setPosts((prev) =>
+      prev.map((p) =>
+        p._id === postId ? { ...p, content: newContent, isEdited: true } : p
+      )
+    );
+  };
+
+  const handleReact = async (postId, emoji) => {
+    try {
+      const res = await reactToPost(postId, emoji);
+      setPosts((prev) =>
+        prev.map((p) =>
+          p._id === postId ? { ...p, reactions: res.reactions } : p
+        )
+      );
+    } catch (err) {
+      const msg = err?.error || err?.message || err?.status || JSON.stringify(err);
+      console.log('handleReact error full:', err);
+      Alert.alert('React failed', String(msg));
+    }
+  };
+
   const renderItem = ({ item }) => {
     const isOwn =
       item?.authorId != null &&
@@ -200,7 +235,17 @@ export default function TimelineScreen({ navigation }) {
     if (item?.type === 'timed-wish' && item?.isSealed === true) {
       return <LockedWishCard post={item} isOwn={isOwn} />;
     }
-    return <PostCard post={item} isOwn={isOwn} onDelete={handleDelete} />;
+    return (
+      <PostCard
+        post={item}
+        isOwn={isOwn}
+        onDelete={handleDelete}
+        onEdit={handleEdit}
+        reactions={item?.reactions || {}}
+        currentUserId={user?._id?.toString()}
+        onReact={handleReact}
+      />
+    );
   };
 
   const Header = () => (

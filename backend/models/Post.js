@@ -37,6 +37,19 @@ const postSchema = new mongoose.Schema({
     default: null,
     maxlength: 500,
   },
+  reactions: {
+    type: Map,
+    of: String,
+    default: {},
+  },
+  isEdited: {
+    type: Boolean,
+    default: false,
+  },
+  editedAt: {
+    type: Date,
+    default: null,
+  },
   unlocksAt: {
     type: Date,
     default: null,

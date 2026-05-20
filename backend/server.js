@@ -23,14 +23,14 @@ app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL || '*' }));
 app.use(express.json());
 
+// Attach io to every request so routes can emit events
+app.use((req, res, next) => { req.io = io; next(); });
+
 const authLimiter = rateLimit({ windowMs: 15*60*1000, max: 10 });
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/notifications', notifRoutes);
-
-// Attach io to every request so routes can emit events
-app.use((req, res, next) => { req.io = io; next(); });
 
 // Start timed wish unlock scheduler
 require('./utils/scheduler')(io);
