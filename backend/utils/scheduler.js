@@ -104,4 +104,76 @@ module.exports = function (io) {
       }
     }
   });
+
+  cron.schedule('0 9 * * *', async () => {
+    try {
+      const now = new Date();
+      
+      // Check 1 year ago, 6 months ago, 1 month ago
+      const checkDates = [
+        { label: '1 year ago', 
+          ms: 365 * 24 * 60 * 60 * 1000 },
+        { label: '6 months ago', 
+          ms: 180 * 24 * 60 * 60 * 1000 },
+        { label: '1 month ago', 
+          ms: 30 * 24 * 60 * 60 * 1000 },
+      ];
+      
+      for (const { label, ms } of checkDates) {
+        const targetDate = new Date(now.getTime() - ms);
+        const startOfDay = new Date(targetDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(targetDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        // Find all rooms
+        const rooms = await Room.find({ 
+          status: 'active' 
+        }).select('_id userIds');
+        
+        for (const room of rooms) {
+          try {
+            const post = await Post.findOne({
+              roomId: room._id,
+              parentId: null,
+              type: { $ne: 'timed-wish' },
+              isSealed: false,
+              createdAt: { 
+                $gte: startOfDay, 
+                $lte: endOfDay 
+              },
+            }).sort({ createdAt: 1 });
+            
+            if (!post) continue;
+            
+            const preview = post.content
+              ? post.content.substring(0, 60)
+              : post.mediaUrl 
+                ? '📷 A photo'
+                : post.songUrl 
+                  ? '🎵 A song'
+                  : 'A memory';
+            
+            // Notify both users in the room
+            for (const userId of room.userIds) {
+              await notifyPartner({
+                roomId: room._id,
+                senderUserId: userId,
+                title: `On this day — ${label}`,
+                body: preview,
+                data: { 
+                  type: 'on_this_day',
+                  postId: post._id.toString(),
+                },
+              });
+            }
+          } catch (err) {
+            continue;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('On this day scheduler error:', err);
+    }
+  });
 };

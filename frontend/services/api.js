@@ -128,3 +128,15 @@ export const pinPost = (postId) =>
 
 export const getPinnedPosts = () =>
   apiCall('GET', '/posts?pinned=true&limit=10');
+
+export const getTodayJournal = () =>
+  apiCall('GET', '/journal/today');
+
+export const getAllJournals = (page = 1) =>
+  apiCall('GET', `/journal?page=${page}&limit=10`);
+
+export const addJournalEntry = (content) =>
+  apiCall('POST', '/journal/add', { content });
+
+export const getOnThisDay = () =>
+  apiCall('GET', '/journal/on-this-day');

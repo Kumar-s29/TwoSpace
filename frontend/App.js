@@ -17,6 +17,7 @@ import WishesScreen from './screens/WishesScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import CapsuleScreen from './screens/CapsuleScreen';
 import CapsuleDetailScreen from './screens/CapsuleDetailScreen';
+import JournalScreen from './screens/JournalScreen';
 
 const AuthStack = createNativeStackNavigator();
 const SetupStack = createNativeStackNavigator();
@@ -84,6 +85,16 @@ function MainTabs() {
           tabBarLabel: 'Wishes',
           tabBarIcon: ({ color }) => (
             <Text style={{ fontSize: 18, color }}>⏰</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Journal"
+        component={JournalScreen}
+        options={{
+          tabBarLabel: 'Journal',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 18, color }}>📖</Text>
           ),
         }}
       />
