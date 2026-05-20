@@ -8,14 +8,20 @@ const Capsule = require('../models/Capsule');
 const { notifyPartner } = require('../utils/notify');
 const multer = require('multer');
 const { uploadToCloudinary } = require('../utils/upload');
+const cloudinary = require('cloudinary').v2;
 
 const router = express.Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB for audio
   fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowed = [
+      'image/jpeg', 'image/png', 'image/webp',
+      'audio/m4a', 'audio/mpeg', 'audio/mp4',
+      'audio/x-m4a', 'audio/aac',
+      'video/mp4', // some devices send m4a as video/mp4
+    ];
     if (allowed.includes(file.mimetype)) cb(null, true);
     else cb(new Error('INVALID_FILE_TYPE'));
   },
@@ -310,6 +316,44 @@ router.post('/upload-image', auth, async (req, res) => {
   });
 });
 
+router.post('/upload-audio', auth, async (req, res) => {
+  const roomId = requireRoomId(req, res);
+  if (!roomId) return;
+
+  return upload.single('audio')(req, res, async (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, error: 'FILE_TOO_LARGE' });
+      }
+      return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'NO_FILE' });
+    }
+
+    try {
+      const audioUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'twospace/audio',
+            resource_type: 'video', // Cloudinary uses 'video' for audio
+          },
+          (err, result) => {
+            if (err || !result?.secure_url) reject(new Error('UPLOAD_FAILED'));
+            else resolve(result.secure_url);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
+
+      return res.status(200).json({ success: true, audioUrl });
+    } catch (uploadErr) {
+      return sendServerError(res);
+    }
+  });
+});
+
 router.post('/:id/reply', auth, async (req, res) => {
   try {
     const roomId = requireRoomId(req, res);
@@ -530,13 +574,15 @@ router.post('/capsule/:capsuleId/add', auth, async (req, res) => {
       return res.status(400).json({ success: false, error: 'CAPSULE_CLOSED' });
     }
 
-    const { content, moodTag, mediaUrl } = req.body || {};
+    const { content, moodTag, mediaUrl, audioUrl } = req.body || {};
     const contentStr = content === undefined || content === null ? '' : String(content);
     const trimmedContent = contentStr.trim();
     const mediaUrlStr = mediaUrl === undefined || mediaUrl === null ? null : String(mediaUrl).trim();
     const moodTagStr = moodTag === undefined || moodTag === null ? null : String(moodTag).trim();
+    const audioUrlStr = audioUrl === undefined || audioUrl === null ? null : String(audioUrl).trim();
 
-    if (!trimmedContent || trimmedContent.length === 0) {
+    // Require at least content OR a media attachment
+    if ((!trimmedContent || trimmedContent.length === 0) && !mediaUrlStr && !audioUrlStr) {
       return res.status(400).json({ success: false, error: 'CONTENT_REQUIRED' });
     }
     if (trimmedContent.length > 2000) {
@@ -553,15 +599,21 @@ router.post('/capsule/:capsuleId/add', auth, async (req, res) => {
         return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
       }
     }
+    if (audioUrlStr) {
+      if (!audioUrlStr.startsWith('https://res.cloudinary.com/')) {
+        return res.status(400).json({ success: false, error: 'VALIDATION_ERROR' });
+      }
+    }
 
     const post = await Post.create({
       roomId,
       authorId: req.user._id,
       type: 'post',
       capsuleId: capsule._id,
-      content: trimmedContent,
+      content: trimmedContent || null,
       moodTag: moodTagStr || null,
       mediaUrl: mediaUrlStr || null,
+      audioUrl: audioUrlStr || null,
       unlocksAt: null,
       isSealed: true,
       parentId: null,

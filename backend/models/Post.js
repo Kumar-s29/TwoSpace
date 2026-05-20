@@ -32,6 +32,11 @@ const postSchema = new mongoose.Schema({
     default: null,
     maxlength: 500,
   },
+  audioUrl: {
+    type: String,
+    default: null,
+    maxlength: 500,
+  },
   unlocksAt: {
     type: Date,
     default: null,

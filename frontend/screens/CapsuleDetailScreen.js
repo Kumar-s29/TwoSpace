@@ -3,9 +3,11 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Modal,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -16,9 +18,11 @@ import { io } from 'socket.io-client';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Audio } from 'expo-av';
+import * as ImagePicker from 'expo-image-picker';
 
 import { AuthContext } from '../context/AuthContext';
-import { addToCapsule, confirmCapsule, getCapsule, getMyRoom } from '../services/api';
+import { addToCapsule, confirmCapsule, getCapsule, getMyRoom, uploadImage, uploadAudio } from '../services/api';
 import MoodPicker from '../components/MoodPicker';
 
 dayjs.extend(relativeTime);
@@ -41,8 +45,22 @@ export default function CapsuleDetailScreen({ navigation, route }) {
   const [moodTag, setMoodTag] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
 
+  // Photo state
+  const [imageUri, setImageUri] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  // Voice note state
+  const [recording, setRecording] = useState(null);
+  const [recordingUri, setRecordingUri] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+
   const socketRef = useRef(null);
   const countdownTimerRef = useRef(null);
+  const durationTimerRef = useRef(null);
 
   const load = async () => {
     if (!capsuleId) return;
@@ -102,6 +120,11 @@ export default function CapsuleDetailScreen({ navigation, route }) {
         socket.disconnect();
       } catch (e) {}
       socketRef.current = null;
+      // Cleanup recording timer & recording on unmount
+      if (durationTimerRef.current) clearInterval(durationTimerRef.current);
+      if (recording) {
+        recording.stopAndUnloadAsync().catch(() => {});
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, capsuleId]);
@@ -110,7 +133,6 @@ export default function CapsuleDetailScreen({ navigation, route }) {
     if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
     if (capsule?.status !== 'sealed') return;
     countdownTimerRef.current = setInterval(() => {
-      // tick to re-render countdown
       setCapsule((prev) => (prev ? { ...prev } : prev));
     }, 60 * 1000);
     return () => {
@@ -169,19 +191,164 @@ export default function CapsuleDetailScreen({ navigation, route }) {
     return `Opens in ${days} days ${hours} hours`;
   };
 
+  // ─── Photo functions ────────────────────────────────────────────────────────
+  const onPickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsEditing: true,
+        aspect: [4, 3],
+      });
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setImageUri(result.assets[0].uri);
+        setImageUrl(null);
+        // Clear voice note if photo picked
+        discardRecording();
+      }
+    } catch (err) {}
+  };
+
+  // ─── Voice recording functions ───────────────────────────────────────────
+  const startRecording = async () => {
+    try {
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording: rec } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      setRecording(rec);
+      setIsRecording(true);
+      setRecordingDuration(0);
+      setImageUri(null); // clear photo if recording
+      setImageUrl(null);
+
+      durationTimerRef.current = setInterval(() => {
+        setRecordingDuration((d) => {
+          if (d >= 59) {
+            stopRecordingInner(rec);
+            return 60;
+          }
+          return d + 1;
+        });
+      }, 1000);
+    } catch (err) {
+      Alert.alert('Could not start recording.', 'Please allow microphone access.');
+    }
+  };
+
+  const stopRecordingInner = async (rec) => {
+    try {
+      if (durationTimerRef.current) clearInterval(durationTimerRef.current);
+      setIsRecording(false);
+      await rec.stopAndUnloadAsync();
+      const uri = rec.getURI();
+      setRecording(null);
+      setRecordingUri(uri);
+    } catch (err) {}
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+    await stopRecordingInner(recording);
+  };
+
+  const playRecording = async () => {
+    if (!recordingUri) return;
+    try {
+      const { sound } = await Audio.Sound.createAsync({ uri: recordingUri });
+      await sound.playAsync();
+    } catch (err) {
+      Alert.alert('Could not play recording.');
+    }
+  };
+
+  const discardRecording = () => {
+    setRecordingUri(null);
+    setAudioUrl(null);
+    setRecordingDuration(0);
+    if (recording) {
+      recording.stopAndUnloadAsync().catch(() => {});
+      setRecording(null);
+    }
+    setIsRecording(false);
+    if (durationTimerRef.current) clearInterval(durationTimerRef.current);
+  };
+
+  // ─── Submit ──────────────────────────────────────────────────────────────
   const resetAddModal = () => {
     setMemoryText('');
     setMoodTag(null);
+    setImageUri(null);
+    setImageUrl(null);
+    setRecordingUri(null);
+    setAudioUrl(null);
+    setRecordingDuration(0);
+    if (recording) {
+      recording.stopAndUnloadAsync().catch(() => {});
+      setRecording(null);
+    }
+    setIsRecording(false);
+    if (durationTimerRef.current) clearInterval(durationTimerRef.current);
   };
 
   const submitAdd = async () => {
     const trimmed = memoryText.trim();
-    if (!trimmed || trimmed.length === 0) return;
+    if (!trimmed && !imageUri && !recordingUri) return;
     if (trimmed.length > 2000) return;
     if (isAdding) return;
+
     setIsAdding(true);
     try {
-      await addToCapsule(capsuleId, { content: trimmed, moodTag });
+      let finalImageUrl = imageUrl;
+      let finalAudioUrl = audioUrl;
+
+      // Upload image if selected and not yet uploaded
+      if (imageUri && !finalImageUrl) {
+        setIsUploadingImage(true);
+        try {
+          const res = await uploadImage(imageUri);
+          finalImageUrl = res?.mediaUrl || null;
+          setImageUrl(finalImageUrl);
+        } catch (err) {
+          setIsUploadingImage(false);
+          setIsAdding(false);
+          Alert.alert('Could not upload photo.', 'Please try again.');
+          return;
+        } finally {
+          setIsUploadingImage(false);
+        }
+      }
+
+      // Upload audio if recorded and not yet uploaded
+      if (recordingUri && !finalAudioUrl) {
+        setIsUploadingAudio(true);
+        try {
+          const res = await uploadAudio(recordingUri);
+          finalAudioUrl = res?.audioUrl || null;
+          setAudioUrl(finalAudioUrl);
+        } catch (err) {
+          setIsUploadingAudio(false);
+          setIsAdding(false);
+          Alert.alert('Could not upload voice note.', 'Please try again.');
+          return;
+        } finally {
+          setIsUploadingAudio(false);
+        }
+      }
+
+      await addToCapsule(capsuleId, {
+        content: trimmed || null,
+        moodTag,
+        ...(finalImageUrl ? { mediaUrl: finalImageUrl } : {}),
+        ...(finalAudioUrl ? { audioUrl: finalAudioUrl } : {}),
+      });
+
       setShowAddModal(false);
       resetAddModal();
       await load();
@@ -192,6 +359,7 @@ export default function CapsuleDetailScreen({ navigation, route }) {
     }
   };
 
+  // ─── Render post ─────────────────────────────────────────────────────────
   const renderPost = ({ item }) => {
     const sealed = capsule?.isSealed === true;
     const isOwn =
@@ -218,12 +386,42 @@ export default function CapsuleDetailScreen({ navigation, route }) {
           <Text style={styles.initialText}>{initial}</Text>
         </View>
         <View style={styles.postBody}>
-          <Text style={[styles.postContent, sealed && styles.postContentSealed]}>{content}</Text>
+          {content ? (
+            <Text style={[styles.postContent, sealed && styles.postContentSealed]}>{content}</Text>
+          ) : null}
           {moodMeta ? (
             <View style={[styles.moodBadge, { backgroundColor: moodMeta.bg }]}>
               <Text style={[styles.moodText, { color: moodMeta.fg }]}>{moodMeta.text}</Text>
             </View>
           ) : null}
+
+          {/* Photo — only shown when capsule is open */}
+          {!sealed && item?.mediaUrl ? (
+            <Image
+              source={{ uri: item.mediaUrl }}
+              style={styles.postImage}
+              resizeMode="cover"
+            />
+          ) : null}
+
+          {/* Voice note — only shown when capsule is open */}
+          {!sealed && item?.audioUrl ? (
+            <Pressable
+              onPress={async () => {
+                try {
+                  const { sound } = await Audio.Sound.createAsync({ uri: item.audioUrl });
+                  await sound.playAsync();
+                } catch (err) {
+                  Alert.alert('Could not play audio.');
+                }
+              }}
+              style={styles.audioPlayBtn}
+            >
+              <Text style={{ fontSize: 18 }}>▶️</Text>
+              <Text style={styles.audioPlayText}>Play voice note</Text>
+            </Pressable>
+          ) : null}
+
           <Text style={styles.postTime}>
             {item?.createdAt ? dayjs(item.createdAt).fromNow() : ''}
           </Text>
@@ -280,6 +478,17 @@ export default function CapsuleDetailScreen({ navigation, route }) {
       {capsule?.status === 'opened' ? <OpenedInfo /> : null}
     </>
   );
+
+  const canSubmit =
+    (memoryText.trim().length > 0 || imageUri || recordingUri) && !isAdding && !isRecording;
+
+  const isWorking = isAdding || isUploadingImage || isUploadingAudio;
+
+  const workingLabel = isUploadingImage
+    ? 'Uploading photo...'
+    : isUploadingAudio
+      ? 'Uploading voice note...'
+      : 'Adding memory...';
 
   if (isLoading) {
     return (
@@ -346,16 +555,17 @@ export default function CapsuleDetailScreen({ navigation, route }) {
       </View>
 
       <View style={styles.contentCard}>
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item._id}
-        renderItem={renderPost}
-        ListHeaderComponent={ListHeader}
-        contentContainerStyle={styles.listContent}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
-      />
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => item._id}
+          renderItem={renderPost}
+          ListHeaderComponent={ListHeader}
+          contentContainerStyle={styles.listContent}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
+        />
       </View>
 
+      {/* Add Memory Modal */}
       <Modal
         visible={showAddModal}
         transparent
@@ -367,48 +577,145 @@ export default function CapsuleDetailScreen({ navigation, route }) {
         }}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Add a Memory</Text>
-            <TextInput
-              placeholder="Write a memory..."
-              value={memoryText}
-              onChangeText={setMemoryText}
-              multiline
-              maxLength={2000}
-              editable={!isAdding}
-              style={styles.modalInput}
-            />
-            <MoodPicker value={moodTag} onChange={setMoodTag} />
+          <ScrollView
+            contentContainerStyle={styles.modalScrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Add a Memory</Text>
 
-            <View style={styles.modalButtons}>
-              <Pressable
-                style={[styles.modalBtn, styles.modalCancelBtn]}
-                onPress={() => {
-                  if (isAdding) return;
-                  setShowAddModal(false);
-                  resetAddModal();
-                }}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </Pressable>
+              <TextInput
+                placeholder="Write a memory... (optional if adding photo/voice)"
+                placeholderTextColor="#9CA3AF"
+                value={memoryText}
+                onChangeText={setMemoryText}
+                multiline
+                maxLength={2000}
+                editable={!isAdding}
+                style={styles.modalInput}
+              />
 
-              <Pressable
-                style={[
-                  styles.modalBtn,
-                  styles.modalAddBtn,
-                  (memoryText.trim().length === 0 || isAdding) && styles.modalAddDisabled,
-                ]}
-                disabled={memoryText.trim().length === 0 || isAdding}
-                onPress={submitAdd}
-              >
-                {isAdding ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.modalAddText}>Add Memory</Text>
-                )}
-              </Pressable>
+              <MoodPicker value={moodTag} onChange={setMoodTag} />
+
+              {/* Media section */}
+              <View style={styles.mediaSection}>
+                <Text style={styles.mediaLabel}>Add media (optional)</Text>
+
+                <View style={styles.mediaRow}>
+                  {/* Photo button */}
+                  <Pressable
+                    onPress={onPickImage}
+                    disabled={isAdding || isRecording}
+                    style={[
+                      styles.mediaBtn,
+                      imageUri ? styles.mediaBtnActive : null,
+                    ]}
+                  >
+                    <Text style={styles.mediaBtnIcon}>📷</Text>
+                    <Text style={styles.mediaBtnText}>
+                      {imageUri ? 'Photo added ✓' : 'Add Photo'}
+                    </Text>
+                  </Pressable>
+
+                  {/* Voice note button */}
+                  <Pressable
+                    onPress={
+                      isRecording
+                        ? stopRecording
+                        : recordingUri
+                          ? playRecording
+                          : startRecording
+                    }
+                    disabled={isAdding || (imageUri != null)}
+                    style={[
+                      styles.mediaBtn,
+                      isRecording ? styles.mediaBtnRecording : null,
+                      recordingUri && !isRecording ? styles.mediaBtnActive : null,
+                    ]}
+                  >
+                    <Text style={styles.mediaBtnIcon}>
+                      {isRecording ? '⏹' : recordingUri ? '▶️' : '🎙️'}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.mediaBtnText,
+                        isRecording ? styles.mediaBtnTextRecording : null,
+                      ]}
+                    >
+                      {isRecording
+                        ? `Recording ${recordingDuration}s`
+                        : recordingUri
+                          ? `${recordingDuration}s — tap to play`
+                          : 'Voice note'}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                {/* Image preview */}
+                {imageUri ? (
+                  <View style={styles.imagePreviewWrap}>
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.imagePreview}
+                      resizeMode="cover"
+                    />
+                    <Pressable
+                      onPress={() => {
+                        setImageUri(null);
+                        setImageUrl(null);
+                      }}
+                      style={styles.imageRemoveBtn}
+                    >
+                      <Text style={styles.imageRemoveText}>✕</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+
+                {/* Discard recording */}
+                {recordingUri && !isRecording ? (
+                  <Pressable onPress={discardRecording} style={styles.discardBtn}>
+                    <Text style={styles.discardText}>Discard recording</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+
+              {/* Buttons */}
+              <View style={styles.modalButtons}>
+                <Pressable
+                  style={[styles.modalBtn, styles.modalCancelBtn]}
+                  onPress={() => {
+                    if (isAdding) return;
+                    setShowAddModal(false);
+                    resetAddModal();
+                  }}
+                  disabled={isAdding}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.modalBtn,
+                    styles.modalAddBtn,
+                    (!canSubmit || isWorking) && styles.modalAddDisabled,
+                  ]}
+                  disabled={!canSubmit || isWorking}
+                  onPress={submitAdd}
+                >
+                  {isWorking ? (
+                    <View style={{ alignItems: 'center' }}>
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                      <Text style={[styles.modalAddText, { fontSize: 10, marginTop: 2 }]}>
+                        {workingLabel}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.modalAddText}>Add Memory</Text>
+                  )}
+                </Pressable>
+              </View>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -509,13 +816,39 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   moodText: { fontSize: 11, fontWeight: '900' },
+  postImage: {
+    width: '100%',
+    aspectRatio: 4 / 3,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  audioPlayBtn: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F0EFFC',
+    borderRadius: 10,
+    padding: 10,
+    alignSelf: 'flex-start',
+  },
+  audioPlayText: {
+    fontSize: 12,
+    color: '#4F46B8',
+    fontWeight: '600',
+  },
   postTime: { marginTop: 8, color: '#9CA3AF', fontSize: 12 },
+  // Modal
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   modalCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24 },
   modalTitle: { color: '#111827', fontSize: 16, fontWeight: '900' },
@@ -527,11 +860,89 @@ const styles = StyleSheet.create({
     padding: 12,
     color: '#111827',
     backgroundColor: '#F9FAFB',
-    minHeight: 120,
+    minHeight: 100,
     textAlignVertical: 'top',
   },
+  // Media section
+  mediaSection: {
+    marginTop: 14,
+  },
+  mediaLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  mediaRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  mediaBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  mediaBtnActive: {
+    backgroundColor: '#F0EFFC',
+    borderColor: '#4F46B8',
+  },
+  mediaBtnRecording: {
+    backgroundColor: '#FFF0F0',
+    borderColor: '#DC2626',
+  },
+  mediaBtnIcon: {
+    fontSize: 20,
+  },
+  mediaBtnText: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 3,
+    textAlign: 'center',
+  },
+  mediaBtnTextRecording: {
+    color: '#DC2626',
+  },
+  imagePreviewWrap: {
+    marginTop: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+    aspectRatio: 4 / 3,
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+  },
+  imageRemoveBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageRemoveText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  discardBtn: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  discardText: {
+    fontSize: 12,
+    color: '#DC2626',
+    fontWeight: '600',
+  },
   modalButtons: { marginTop: 16, flexDirection: 'row', gap: 12 },
-  modalBtn: { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  modalBtn: { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
   modalCancelBtn: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
   modalCancelText: { color: '#6B7280', fontWeight: '900' },
   modalAddBtn: { backgroundColor: '#4F46B8' },

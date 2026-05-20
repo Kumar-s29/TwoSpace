@@ -84,3 +84,29 @@ export const getMyCapsules = () =>
 
 export const getWishes = () =>
   apiCall('GET', '/posts?type=timed-wish&limit=50');
+
+export const uploadAudio = async (audioUri) => {
+  const token = await AsyncStorage.getItem('twospace_token');
+
+  const formData = new FormData();
+  const filename = audioUri.split('/').pop();
+
+  formData.append('audio', {
+    uri: audioUri,
+    name: filename,
+    type: 'audio/m4a',
+  });
+
+  const res = await fetch(`${BASE_URL}/posts/upload-audio`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data',
+    },
+    body: formData,
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw { status: res.status, ...data };
+  return data;
+};
