@@ -76,7 +76,12 @@ router.get('/', auth, async (req, res) => {
 
     const { page, limit } = parsePageLimit(req);
 
-    const filter = { roomId, parentId: null };
+    const typeFilter = req.query.type;
+    const filter = {
+      roomId,
+      parentId: null,
+      ...(typeFilter ? { type: typeFilter } : {}),
+    };
     const totalPosts = await Post.countDocuments(filter);
     const totalPages = Math.max(1, Math.ceil(totalPosts / limit));
 

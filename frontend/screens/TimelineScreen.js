@@ -207,16 +207,11 @@ export default function TimelineScreen({ navigation }) {
     <View>
       <View style={styles.header}>
         <Text style={styles.headerLeft}>TwoSpace</Text>
-        <View style={styles.headerRight}>
-          <Pressable onPress={() => navigation.navigate('Settings')} style={styles.gearButton}>
-            <Text style={styles.gear}>⚙</Text>
-          </Pressable>
-          <View style={styles.partnerWrap}>
-            <Text style={styles.partnerName} numberOfLines={1}>
-              {partnerName || ''}
-            </Text>
-            <Text style={styles.dot}>●</Text>
-          </View>
+        <View style={styles.partnerWrap}>
+          <Text style={styles.partnerName} numberOfLines={1}>
+            {partnerName || ''}
+          </Text>
+          <Text style={styles.dot}>●</Text>
         </View>
       </View>
       <View style={styles.divider} />
@@ -317,15 +312,6 @@ export default function TimelineScreen({ navigation }) {
             >
               <Text style={styles.sheetText}>Send Timed Wish</Text>
             </Pressable>
-            <Pressable
-              style={styles.sheetItem}
-              onPress={() => {
-                setFabOpen(false);
-                navigation.navigate('Capsules');
-              }}
-            >
-              <Text style={styles.sheetText}>View Capsules 📦</Text>
-            </Pressable>
           </View>
         </View>
       </Modal>
@@ -359,19 +345,6 @@ const styles = StyleSheet.create({
   headerLeft: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  gearButton: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-  },
-  gear: {
-    fontSize: 18,
     color: '#FFFFFF',
   },
   partnerWrap: {

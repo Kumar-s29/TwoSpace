@@ -140,14 +140,9 @@ export default function CapsuleScreen({ navigation }) {
 
   const Header = (
     <View style={styles.header}>
-      <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-        <Text style={styles.backArrow} numberOfLines={1}>
-          ‹ Back
-        </Text>
-      </Pressable>
       <Text style={styles.headerTitle}>Memory Capsules</Text>
       <Pressable onPress={() => setShowModal(true)} style={styles.newBtn}>
-        <Text style={styles.newBtnText}>New Capsule</Text>
+        <Text style={styles.newBtnText}>+ New</Text>
       </Pressable>
     </View>
   );
@@ -345,28 +340,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   header: {
-    height: 52,
-    paddingHorizontal: 12,
+    paddingTop: 14,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#4F46B8',
-    borderBottomWidth: 0,
-  },
-  backBtn: {
-    width: 72,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backArrow: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
   },
   newBtn: {

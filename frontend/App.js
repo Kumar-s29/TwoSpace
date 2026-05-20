@@ -1,7 +1,8 @@
 import React, { useContext, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { AuthContext, AuthProvider } from './context/AuthContext';
 
@@ -12,13 +13,15 @@ import SetupScreen from './screens/SetupScreen';
 import TimelineScreen from './screens/TimelineScreen';
 import NewPostScreen from './screens/NewPostScreen';
 import WishScreen from './screens/WishScreen';
+import WishesScreen from './screens/WishesScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import CapsuleScreen from './screens/CapsuleScreen';
 import CapsuleDetailScreen from './screens/CapsuleDetailScreen';
 
 const AuthStack = createNativeStackNavigator();
 const SetupStack = createNativeStackNavigator();
-const AppStack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 function AuthStackNavigator() {
   return (
@@ -37,24 +40,96 @@ function SetupStackNavigator() {
   );
 }
 
-function AppStackNavigator() {
+function MainTabs() {
   return (
-    <AppStack.Navigator screenOptions={{ headerShown: false }}>
-      <AppStack.Screen name="Timeline" component={TimelineScreen} />
-      <AppStack.Screen name="Settings" component={SettingsScreen} />
-      <AppStack.Screen name="Capsules" component={CapsuleScreen} />
-      <AppStack.Screen name="CapsuleDetail" component={CapsuleDetailScreen} />
-      <AppStack.Screen
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 0.5,
+          borderTopColor: '#E5E7EB',
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 6,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: -2 },
+        },
+        tabBarActiveTintColor: '#4F46B8',
+        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '600',
+          marginTop: 2,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="Timeline"
+        component={TimelineScreen}
+        options={{
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 18, color }}>🏠</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Wishes"
+        component={WishesScreen}
+        options={{
+          tabBarLabel: 'Wishes',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 18, color }}>⏰</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Capsules"
+        component={CapsuleScreen}
+        options={{
+          tabBarLabel: 'Capsules',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 18, color }}>📦</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          tabBarLabel: 'Settings',
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 18, color }}>⚙️</Text>
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+function AppNavigator() {
+  return (
+    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+      <RootStack.Screen name="Main" component={MainTabs} />
+      <RootStack.Screen
         name="NewPost"
         component={NewPostScreen}
         options={{ presentation: 'modal' }}
       />
-      <AppStack.Screen
+      <RootStack.Screen
         name="Wish"
         component={WishScreen}
         options={{ presentation: 'modal' }}
       />
-    </AppStack.Navigator>
+      <RootStack.Screen
+        name="CapsuleDetail"
+        component={CapsuleDetailScreen}
+      />
+    </RootStack.Navigator>
   );
 }
 
@@ -63,15 +138,15 @@ function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4F46B8' }}>
+        <ActivityIndicator color="#FFFFFF" />
       </View>
     );
   }
 
   if (token === null) return <AuthStackNavigator />;
   if (token && user && user.roomId === null) return <SetupStackNavigator />;
-  if (token && user && user.roomId !== null) return <AppStackNavigator />;
+  if (token && user && user.roomId !== null) return <AppNavigator />;
 
   return <AuthStackNavigator />;
 }

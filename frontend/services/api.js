@@ -81,3 +81,6 @@ export const confirmCapsule = (capsuleId) =>
 
 export const getMyCapsules = () =>
   apiCall('GET', '/posts/capsule/my-capsules');
+
+export const getWishes = () =>
+  apiCall('GET', '/posts?type=timed-wish&limit=50');
