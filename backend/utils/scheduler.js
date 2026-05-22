@@ -230,5 +230,132 @@ module.exports = function (io) {
       console.error('Check-in scheduler error:', err);
     }
   });
+
+  // Milestone notifications scheduler (8:00 AM daily)
+  cron.schedule('0 8 * * *', async () => {
+    try {
+      const Milestone = require('../models/Milestone');
+      const now = new Date();
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(now);
+      todayEnd.setHours(23, 59, 59, 999);
+      
+      // 3 days from now for reminders
+      const reminderDate = new Date(now);
+      reminderDate.setDate(
+        reminderDate.getDate() + 3
+      );
+      const reminderStart = new Date(reminderDate);
+      reminderStart.setHours(0, 0, 0, 0);
+      const reminderEnd = new Date(reminderDate);
+      reminderEnd.setHours(23, 59, 59, 999);
+
+      const rooms = await Room.find({ 
+        status: 'active' 
+      }).select('_id userIds');
+
+      for (const room of rooms) {
+        try {
+          // Check TODAY's milestones
+          const todayMilestones = await 
+            Milestone.find({
+              roomId: room._id,
+              $or: [
+                // Exact date match
+                { 
+                  date: { 
+                    $gte: todayStart, 
+                    $lte: todayEnd 
+                  } 
+                },
+                // Recurring — same month/day
+                { 
+                  isRecurring: true,
+                  $expr: {
+                    $and: [
+                      { $eq: [
+                        { $month: '$date' }, 
+                        now.getMonth() + 1
+                      ]},
+                      { $eq: [
+                        { $dayOfMonth: '$date' }, 
+                        now.getDate()
+                      ]},
+                    ]
+                  }
+                }
+              ]
+            });
+
+          for (const m of todayMilestones) {
+            for (const userId of room.userIds) {
+              await notifyPartner({
+                roomId: room._id,
+                senderUserId: userId,
+                title: `${m.emoji} ${m.title}`,
+                body: m.isRecurring
+                  ? `Today is your ${m.title}! 🎉`
+                  : `Milestone day — ${m.title}`,
+                data: { 
+                  type: 'milestone_today',
+                  milestoneId: m._id.toString(),
+                },
+              });
+            }
+          }
+
+          // Check 3-DAY REMINDERS
+          const upcomingMilestones = await 
+            Milestone.find({
+              roomId: room._id,
+              $or: [
+                { 
+                  date: { 
+                    $gte: reminderStart, 
+                    $lte: reminderEnd 
+                  } 
+                },
+                { 
+                  isRecurring: true,
+                  $expr: {
+                    $and: [
+                      { $eq: [
+                        { $month: '$date' }, 
+                        reminderDate.getMonth() + 1
+                      ]},
+                      { $eq: [
+                        { $dayOfMonth: '$date' }, 
+                        reminderDate.getDate()
+                      ]},
+                    ]
+                  }
+                }
+              ]
+            });
+
+          for (const m of upcomingMilestones) {
+            for (const userId of room.userIds) {
+              await notifyPartner({
+                roomId: room._id,
+                senderUserId: userId,
+                title: `Coming up — ${m.title}`,
+                body: `${m.emoji} In 3 days: ${m.title}`,
+                data: { 
+                  type: 'milestone_reminder',
+                  milestoneId: m._id.toString(),
+                },
+              });
+            }
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+      console.log('Milestone notifications sent');
+    } catch (err) {
+      console.error('Milestone scheduler error:', err);
+    }
+  });
 };
 

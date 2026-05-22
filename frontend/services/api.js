@@ -140,3 +140,43 @@ export const addJournalEntry = (content) =>
 
 export const getOnThisDay = () =>
   apiCall('GET', '/journal/on-this-day');
+
+export const getTodayCheckIn = () =>
+  apiCall('GET', '/checkin/today');
+
+export const answerCheckIn = (content) =>
+  apiCall('POST', '/checkin/answer', { content });
+
+export const setCustomQuestion = (question) =>
+  apiCall('POST', '/checkin/custom', { question });
+
+export const getCheckInHistory = (page = 1) =>
+  apiCall('GET', `/checkin/history?page=${page}`);
+
+// Bucket list
+export const getBucketList = () =>
+  apiCall('GET', '/bucketlist');
+
+export const addBucketItem = (body) =>
+  apiCall('POST', '/bucketlist', body);
+
+export const toggleBucketItem = (id) =>
+  apiCall('PATCH', `/bucketlist/${id}/toggle`);
+
+export const celebrateBucketItem = (id) =>
+  apiCall('POST', `/bucketlist/${id}/celebrate`);
+
+export const deleteBucketItem = (id) =>
+  apiCall('DELETE', `/bucketlist/${id}`);
+
+// Milestones
+export const getMilestones = () =>
+  apiCall('GET', '/milestones');
+
+export const addMilestone = (body) =>
+  apiCall('POST', '/milestones', body);
+
+export const deleteMilestone = (id) =>
+  apiCall('DELETE', `/milestones/${id}`);
+
+

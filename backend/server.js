@@ -14,6 +14,8 @@ const postRoutes = require('./routes/posts');
 const notifRoutes = require('./routes/notifications');
 const journalRoutes = require('./routes/journal');
 const checkInRoutes = require('./routes/checkin');
+const bucketListRoutes = require('./routes/bucketlist');
+const milestoneRoutes = require('./routes/milestones');
 
 connectDB();
 
@@ -35,6 +37,9 @@ app.use('/api/posts', postRoutes);
 app.use('/api/notifications', notifRoutes);
 app.use('/api/journal', journalRoutes);
 app.use('/api/checkin', checkInRoutes);
+app.use('/api/bucketlist', bucketListRoutes);
+app.use('/api/milestones', milestoneRoutes);
+
 
 
 // Start timed wish unlock scheduler

@@ -18,6 +18,9 @@ import SettingsScreen from './screens/SettingsScreen';
 import CapsuleScreen from './screens/CapsuleScreen';
 import CapsuleDetailScreen from './screens/CapsuleDetailScreen';
 import JournalScreen from './screens/JournalScreen';
+import MoreScreen from './screens/MoreScreen';
+import BucketListScreen from './screens/BucketListScreen';
+import MilestonesScreen from './screens/MilestonesScreen';
 
 const AuthStack = createNativeStackNavigator();
 const SetupStack = createNativeStackNavigator();
@@ -109,12 +112,12 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
+        name="More"
+        component={MoreScreen}
         options={{
-          tabBarLabel: 'Settings',
+          tabBarLabel: 'More',
           tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 18, color }}>⚙️</Text>
+            <Text style={{ fontSize: 18, color }}>📋</Text>
           ),
         }}
       />
@@ -139,6 +142,18 @@ function AppNavigator() {
       <RootStack.Screen
         name="CapsuleDetail"
         component={CapsuleDetailScreen}
+      />
+      <RootStack.Screen
+        name="BucketList"
+        component={BucketListScreen}
+      />
+      <RootStack.Screen
+        name="Milestones"
+        component={MilestonesScreen}
+      />
+      <RootStack.Screen
+        name="Settings"
+        component={SettingsScreen}
       />
     </RootStack.Navigator>
   );
