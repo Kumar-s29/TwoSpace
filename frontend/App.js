@@ -1,8 +1,18 @@
-import React, { useContext, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react';
+import { ActivityIndicator, Text, View, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import * as Notifications from 'expo-notifications';
+import { saveExpoPushToken } from './services/api';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 import { AuthContext, AuthProvider } from './context/AuthContext';
 
@@ -161,6 +171,49 @@ function AppNavigator() {
 
 function RootNavigator() {
   const { token, user, isLoading } = useContext(AuthContext);
+
+  useEffect(() => {
+    async function registerForPushNotifications() {
+      if (!token) return;
+      try {
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        if (existingStatus !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus !== 'granted') {
+          console.log('Failed to get push token for push notifications!');
+          return;
+        }
+
+        const pushToken = (await Notifications.getExpoPushTokenAsync({
+          projectId: 'c67db40f-a887-403f-a51b-775b2099343e',
+        })).data;
+        console.log('Expo Push Token received:', pushToken);
+
+        await saveExpoPushToken(pushToken);
+        console.log('Push token successfully registered with backend');
+      } catch (error) {
+        console.warn('Error during push token registration:', error.message || error);
+      }
+
+      if (Platform.OS === 'android') {
+        try {
+          await Notifications.setNotificationChannelAsync('default', {
+            name: 'default',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+          });
+        } catch (error) {
+          console.warn('Error setting Android notification channel:', error);
+        }
+      }
+    }
+
+    registerForPushNotifications();
+  }, [token]);
 
   if (isLoading) {
     return (
