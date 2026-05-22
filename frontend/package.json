@@ -8,7 +8,6 @@
     "ios": "expo start --ios"
   },
   "dependencies": {
-    "@expo/metro-config": "^0.18.11",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/datetimepicker": "8.0.1",
     "@react-navigation/bottom-tabs": "^6.5.20",
@@ -28,6 +27,9 @@
     "react-native-screens": "3.31.1",
     "react-native-toast-message": "^2.2.0",
     "socket.io-client": "^4.7.5"
+  },
+  "overrides": {
+    "@expo/metro-config": "0.18.11"
   },
   "private": true
 }
