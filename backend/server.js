@@ -13,6 +13,7 @@ const roomRoutes = require('./routes/rooms');
 const postRoutes = require('./routes/posts');
 const notifRoutes = require('./routes/notifications');
 const journalRoutes = require('./routes/journal');
+const checkInRoutes = require('./routes/checkin');
 
 connectDB();
 
@@ -33,6 +34,8 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/notifications', notifRoutes);
 app.use('/api/journal', journalRoutes);
+app.use('/api/checkin', checkInRoutes);
+
 
 // Start timed wish unlock scheduler
 require('./utils/scheduler')(io);

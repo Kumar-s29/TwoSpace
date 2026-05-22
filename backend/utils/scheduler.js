@@ -176,4 +176,59 @@ module.exports = function (io) {
       console.error('On this day scheduler error:', err);
     }
   });
+
+  // Daily check-in questions midnight scheduler
+  cron.schedule('0 0 * * *', async () => {
+    try {
+      const rooms = await Room.find({ 
+        status: 'active' 
+      }).select('_id userIds');
+
+      const questions = require('../data/questions');
+      const today = new Date()
+        .toISOString().split('T')[0];
+
+      for (const room of rooms) {
+        try {
+          // Pre-create today's check-in with
+          // the question so both users see the
+          // same question when they open the app
+          const seed = today.replace(/-/g, '') + 
+            room._id.toString().slice(-4);
+          const index = Math.abs(
+            parseInt(seed, 10) % questions.length
+          );
+          const question = questions[index];
+
+          await require('../models/CheckIn')
+            .findOneAndUpdate(
+              { roomId: room._id, date: today },
+              { $setOnInsert: { 
+                roomId: room._id, 
+                date: today, 
+                question 
+              }},
+              { upsert: true, new: true }
+            );
+
+          // Notify both users of new question
+          for (const userId of room.userIds) {
+            await notifyPartner({
+              roomId: room._id,
+              senderUserId: userId,
+              title: 'TwoSpace — Daily Question',
+              body: question.substring(0, 80),
+              data: { type: 'daily_question' },
+            });
+          }
+        } catch (err) {
+          continue;
+        }
+      }
+      console.log('Daily check-in questions created');
+    } catch (err) {
+      console.error('Check-in scheduler error:', err);
+    }
+  });
 };
+
