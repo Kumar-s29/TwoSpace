@@ -70,7 +70,10 @@ export default function LoginScreen() {
     >
       <View style={[styles.container, { backgroundColor: theme.bgPrimary }]}>
         <View style={styles.content}>
-          <Text style={[styles.title, { color: theme.accent }]}>TwoSpace</Text>
+          <Text style={styles.title}>
+            <Text style={{ color: theme.accent }}>Two</Text>
+            <Text style={{ color: theme.pink }}>Space</Text>
+          </Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Your private space</Text>
 
           <TextInput

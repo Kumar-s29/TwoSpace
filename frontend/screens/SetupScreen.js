@@ -184,7 +184,10 @@ export default function SetupScreen() {
       >
       <View style={[styles.container, { backgroundColor: theme.header }]}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.headerText }]}>TwoSpace</Text>
+          <Text style={styles.title}>
+            <Text style={{ color: theme.headerText }}>Two</Text>
+            <Text style={{ color: '#F9A8D4' }}>Space</Text>
+          </Text>
           <Text style={[styles.subtitle, { color: theme.textInverse }]}>Connect with someone special</Text>
         </View>
 

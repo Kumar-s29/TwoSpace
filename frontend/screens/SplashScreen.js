@@ -67,7 +67,6 @@ export default function SplashScreen({ onFinish }) {
           <View style={styles.overlapTint} />
         </Animated.View>
 
-        {/* Title */}
         <Animated.Text
           style={[
             styles.title,
@@ -77,7 +76,8 @@ export default function SplashScreen({ onFinish }) {
             },
           ]}
         >
-          TwoSpace
+          <Text style={{ color: '#FFFFFF' }}>Two</Text>
+          <Text style={{ color: '#F9A8D4' }}>Space</Text>
         </Animated.Text>
 
         {/* Tagline */}

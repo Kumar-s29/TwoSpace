@@ -5,13 +5,13 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import dayjs from 'dayjs';
 import { AuthContext } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -263,8 +263,8 @@ export default function JournalScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>
+        <View style={[styles.header, { backgroundColor: theme.header }]}>
+          <Text style={[styles.headerTitle, { color: theme.headerText }]}>
             Our Journal
           </Text>
         </View>
@@ -530,8 +530,8 @@ export default function JournalScreen() {
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
+      <View style={[styles.header, { backgroundColor: theme.header }]}>
+        <Text style={[styles.headerTitle, { color: theme.headerText }]}>
           Our Journal
         </Text>
       </View>
@@ -560,12 +560,12 @@ export default function JournalScreen() {
               onPress={() => toggleExpand(item.date)}
             >
               <View style={styles.pastCardTop}>
-                <Text style={[styles.pastCardDate, { color: theme.textPrimary }]}>
+                <Text style={[styles.pastCardDate, { color: theme.textPrimary, flex: 1, marginRight: 8 }]} numberOfLines={1}>
                   {dayjs(item.date).format(
                     'dddd, MMMM D, YYYY'
                   )}
                 </Text>
-                <Text style={[styles.pastCardCount, { color: theme.textSecondary }]}>
+                <Text style={[styles.pastCardCount, { color: theme.textSecondary, flexShrink: 0 }]}>
                   {item.entries?.length || 0} thoughts
                 </Text>
               </View>
@@ -602,11 +602,11 @@ export default function JournalScreen() {
                       }
                     >
                       <View style={styles.pastCardTop}>
-                        <Text style={[styles.pastCardDate, { color: theme.textPrimary }]}
+                        <Text style={[styles.pastCardDate, { color: theme.textPrimary, flex: 1, marginRight: 8 }]}
                           numberOfLines={1}>
                           {item.question}
                         </Text>
-                        <Text style={[styles.pastCardCount, { color: theme.textSecondary }]}>
+                        <Text style={[styles.pastCardCount, { color: theme.textSecondary, flexShrink: 0 }]}>
                           {item.answers?.length || 0} answers
                         </Text>
                       </View>

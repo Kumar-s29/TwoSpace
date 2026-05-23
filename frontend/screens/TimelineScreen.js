@@ -341,7 +341,10 @@ export default function TimelineScreen({ navigation }) {
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
       <View>
         <View style={[styles.header, { backgroundColor: theme.header }]}>
-          <Text style={styles.headerLeft}>TwoSpace</Text>
+          <Text style={styles.headerLeft}>
+            <Text style={{ color: theme.headerText }}>Two</Text>
+            <Text style={{ color: '#F9A8D4' }}>Space</Text>
+          </Text>
           <View style={styles.partnerWrap}>
             <Text style={styles.partnerName} numberOfLines={1}>
               {partnerName || ''}
