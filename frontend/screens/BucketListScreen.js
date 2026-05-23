@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
   addBucketItem,
   celebrateBucketItem,
@@ -21,6 +22,7 @@ import {
 } from '../services/api';
 
 export default function BucketListScreen({ navigation }) {
+  const { theme } = useTheme();
   const { user } = useContext(AuthContext);
 
   const [items, setItems] = useState([]);
@@ -160,24 +162,24 @@ export default function BucketListScreen({ navigation }) {
     return (
       <Pressable
         key={item._id}
-        style={[styles.itemCard, item.isDone && styles.itemCardDone]}
+        style={[styles.itemCard, { borderBottomColor: theme.borderLight }, item.isDone && styles.itemCardDone]}
         onLongPress={() => onDelete(item)}
       >
         <Pressable onPress={() => onToggle(item)} style={styles.checkboxWrap}>
-          <View style={[styles.checkbox, item.isDone && styles.checkboxChecked]}>
+          <View style={[styles.checkbox, { borderColor: theme.accent, backgroundColor: theme.bgCard }, item.isDone && { backgroundColor: theme.success, borderColor: theme.success }]}>
             {item.isDone && <Text style={styles.checkIcon}>✓</Text>}
           </View>
         </Pressable>
         <View style={styles.itemContent}>
-          <Text style={[styles.itemTitle, item.isDone && styles.itemTitleDone]}>
+          <Text style={[styles.itemTitle, { color: theme.textPrimary }, item.isDone && [styles.itemTitleDone, { color: theme.textSecondary }]]}>
             {item.title}
           </Text>
           {item.note ? (
-            <Text style={[styles.itemNote, item.isDone && styles.itemNoteDone]}>
+            <Text style={[styles.itemNote, { color: theme.textSecondary }, item.isDone && styles.itemNoteDone]}>
               {item.note}
             </Text>
           ) : null}
-          <Text style={styles.itemMeta}>
+          <Text style={[styles.itemMeta, { color: theme.textMuted }]}>
             Created by {isOwn ? 'you' : creatorName}
             {item.isDone && item.completedBy ? ` • Done by ${item.completedBy?._id === user?._id ? 'you' : (item.completedBy?.displayName || 'Partner')}` : ''}
           </Text>
@@ -188,17 +190,17 @@ export default function BucketListScreen({ navigation }) {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+        <View style={[styles.header, { backgroundColor: theme.header }]}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backArrow}>‹ Back</Text>
+            <Text style={[styles.backArrow, { color: theme.headerText }]}>‹ Back</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Bucket List</Text>
+          <Text style={[styles.headerTitle, { color: theme.headerText }]}>Bucket List</Text>
           <View style={{ width: 50 }} />
         </View>
-        <View style={styles.contentCard}>
-          <View style={styles.center}>
-            <ActivityIndicator color="#4F46B8" />
+        <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
+          <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+            <ActivityIndicator color={theme.accent} />
           </View>
         </View>
       </SafeAreaView>
@@ -206,21 +208,21 @@ export default function BucketListScreen({ navigation }) {
   }
 
   const ListHeader = (
-    <View style={styles.addSection}>
+    <View style={[styles.addSection, { borderBottomColor: theme.border }]}>
       <View style={styles.inputRow}>
         <TextInput
           value={newTitle}
           onChangeText={setNewTitle}
           placeholder="Add to bucket list..."
-          placeholderTextColor="#9CA3AF"
-          style={styles.input}
+          placeholderTextColor={theme.textMuted}
+          style={[styles.input, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
           maxLength={100}
         />
         <Pressable
           onPress={() => setShowAddNote(v => !v)}
           style={styles.noteToggleBtn}
         >
-          <Text style={styles.noteToggleText}>
+          <Text style={[styles.noteToggleText, { color: theme.accent }]}>
             {showAddNote ? 'Hide Note' : '+ Note'}
           </Text>
         </Pressable>
@@ -229,13 +231,14 @@ export default function BucketListScreen({ navigation }) {
           disabled={!newTitle.trim() || isAdding}
           style={[
             styles.addBtn,
+            { backgroundColor: theme.accent },
             (!newTitle.trim() || isAdding) && { opacity: 0.5 }
           ]}
         >
           {isAdding ? (
             <ActivityIndicator color="#FFF" size="small" />
           ) : (
-            <Text style={styles.addBtnText}>Add</Text>
+            <Text style={[styles.addBtnText, { color: theme.accentText }]}>Add</Text>
           )}
         </Pressable>
       </View>
@@ -244,8 +247,8 @@ export default function BucketListScreen({ navigation }) {
           value={newNote}
           onChangeText={setNewNote}
           placeholder="Add a note (optional)..."
-          placeholderTextColor="#9CA3AF"
-          style={[styles.input, styles.noteInput]}
+          placeholderTextColor={theme.textMuted}
+          style={[styles.input, styles.noteInput, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
           maxLength={300}
           multiline
         />
@@ -259,14 +262,14 @@ export default function BucketListScreen({ navigation }) {
         <View style={styles.doneSection}>
           <Pressable
             onPress={() => setShowDone(v => !v)}
-            style={styles.doneToggleHeader}
+            style={[styles.doneToggleHeader, { backgroundColor: theme.bgSecondary }]}
           >
-            <Text style={styles.doneToggleTitle}>
+            <Text style={[styles.doneToggleTitle, { color: theme.textSecondary }]}>
               {showDone ? '▼' : '▶'} Completed ({doneItems.length})
             </Text>
           </Pressable>
           {showDone && (
-            <View style={styles.doneList}>
+            <View style={[styles.doneList, { backgroundColor: theme.bgPrimary }]}>
               {doneItems.map(item => renderItemCard(item))}
             </View>
           )}
@@ -276,16 +279,16 @@ export default function BucketListScreen({ navigation }) {
   );
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+      <View style={[styles.header, { backgroundColor: theme.header }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backArrow}>‹ Back</Text>
+          <Text style={[styles.backArrow, { color: theme.headerText }]}>‹ Back</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Bucket List</Text>
+        <Text style={[styles.headerTitle, { color: theme.headerText }]}>Bucket List</Text>
         <View style={{ width: 50 }} />
       </View>
 
-      <View style={styles.contentCard}>
+      <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
         <FlatList
           data={todoItems}
           keyExtractor={(item) => item._id}
@@ -299,14 +302,14 @@ export default function BucketListScreen({ navigation }) {
             todoItems.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyEmoji}>🪣</Text>
-                <Text style={styles.emptyText}>
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                   Your bucket list is empty.{'\n'}
                   Add something you want to do together.
                 </Text>
               </View>
             ) : null
           }
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { backgroundColor: theme.bgPrimary }]}
         />
       </View>
     </SafeAreaView>

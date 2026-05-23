@@ -24,10 +24,12 @@ import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
 import { addToCapsule, confirmCapsule, getCapsule, getMyRoom, uploadImage, uploadAudio } from '../services/api';
 import MoodPicker from '../components/MoodPicker';
+import { useTheme } from '../context/ThemeContext';
 
 dayjs.extend(relativeTime);
 
 export default function CapsuleDetailScreen({ navigation, route }) {
+  const { theme } = useTheme();
   const { user } = useContext(AuthContext);
   const roomId = user?.roomId || null;
   const capsuleId = route?.params?.capsuleId;
@@ -150,10 +152,10 @@ export default function CapsuleDetailScreen({ navigation, route }) {
 
   const statusMeta = (status) => {
     if (status === 'collecting')
-      return { bg: '#DBEAFE', fg: '#1E40AF', text: 'Adding memories' };
-    if (status === 'sealed') return { bg: '#F0EFFC', fg: '#4F46B8', text: 'Sealed 🔒' };
-    if (status === 'opened') return { bg: '#D1FAE5', fg: '#065F46', text: 'Opened 🎉' };
-    return { bg: '#E5E7EB', fg: '#111827', text: status || 'Unknown' };
+      return { bg: theme.moodLowBg, fg: theme.moodLowText, text: 'Adding memories' };
+    if (status === 'sealed') return { bg: theme.accentLight, fg: theme.accent, text: 'Sealed 🔒' };
+    if (status === 'opened') return { bg: theme.successLight, fg: theme.successText, text: 'Opened 🎉' };
+    return { bg: theme.bgSecondary, fg: theme.textPrimary, text: status || 'Unknown' };
   };
 
   const onRefresh = async () => {
@@ -373,21 +375,21 @@ export default function CapsuleDetailScreen({ navigation, route }) {
     const meta = item?.moodTag;
     const moodMeta =
       meta === 'good'
-        ? { bg: '#D1FAE5', fg: '#065F46', text: '🌤 Good' }
+        ? { bg: theme.moodGoodBg, fg: theme.moodGoodText, text: '🌤 Good' }
         : meta === 'okay'
-          ? { bg: '#FEF3C7', fg: '#92400E', text: '⛅ Okay' }
+          ? { bg: theme.moodOkayBg, fg: theme.moodOkayText, text: '⛅ Okay' }
           : meta === 'low'
-            ? { bg: '#DBEAFE', fg: '#1E40AF', text: '🌧 Low' }
+            ? { bg: theme.moodLowBg, fg: theme.moodLowText, text: '🌧 Low' }
             : null;
 
     return (
-      <View style={[styles.postRow, sealed && styles.postRowSealed]}>
-        <View style={[styles.initialCircle, isOwn ? styles.initialOwn : styles.initialPartner]}>
-          <Text style={styles.initialText}>{initial}</Text>
+      <View style={[styles.postRow, sealed && [styles.postRowSealed, { backgroundColor: theme.bgSecondary, borderTopColor: theme.border }]]}>
+        <View style={[styles.initialCircle, isOwn ? { backgroundColor: theme.accent } : { backgroundColor: theme.pink }]}>
+          <Text style={[styles.initialText, { color: theme.textInverse }]}>{initial}</Text>
         </View>
         <View style={styles.postBody}>
           {content ? (
-            <Text style={[styles.postContent, sealed && styles.postContentSealed]}>{content}</Text>
+            <Text style={[styles.postContent, { color: theme.textPrimary }, sealed && [styles.postContentSealed, { color: theme.textSecondary }]]}>{content}</Text>
           ) : null}
           {moodMeta ? (
             <View style={[styles.moodBadge, { backgroundColor: moodMeta.bg }]}>
@@ -415,14 +417,14 @@ export default function CapsuleDetailScreen({ navigation, route }) {
                   Alert.alert('Could not play audio.');
                 }
               }}
-              style={styles.audioPlayBtn}
+              style={[styles.audioPlayBtn, { backgroundColor: theme.accentLight }]}
             >
               <Text style={{ fontSize: 18 }}>▶️</Text>
-              <Text style={styles.audioPlayText}>Play voice note</Text>
+              <Text style={[styles.audioPlayText, { color: theme.accent }]}>Play voice note</Text>
             </Pressable>
           ) : null}
 
-          <Text style={styles.postTime}>
+          <Text style={[styles.postTime, { color: theme.textMuted }]}>
             {item?.createdAt ? dayjs(item.createdAt).fromNow() : ''}
           </Text>
         </View>
@@ -435,35 +437,35 @@ export default function CapsuleDetailScreen({ navigation, route }) {
 
   const CollectingActions = () => (
     <View style={styles.actions}>
-      <Pressable style={styles.primaryBtn} onPress={() => setShowAddModal(true)}>
-        <Text style={styles.primaryBtnText}>Add a Memory</Text>
+      <Pressable style={[styles.primaryBtn, { backgroundColor: theme.accent }]} onPress={() => setShowAddModal(true)}>
+        <Text style={[styles.primaryBtnText, { color: theme.accentText }]}>Add a Memory</Text>
       </Pressable>
 
       {!isConfirmedByMe ? (
-        <Pressable style={styles.sealBtn} onPress={onConfirmSeal}>
-          <Text style={styles.sealBtnText}>Seal Capsule</Text>
+        <Pressable style={[styles.sealBtn, { borderColor: theme.pink, backgroundColor: theme.bgCard }]} onPress={onConfirmSeal}>
+          <Text style={[styles.sealBtnText, { color: theme.pink }]}>Seal Capsule</Text>
         </Pressable>
       ) : null}
 
       {isConfirmedByMe && confirmedCount < 2 ? (
-        <Text style={styles.waitingText}>Waiting for {partnerName || 'partner'} to confirm</Text>
+        <Text style={[styles.waitingText, { color: theme.textSecondary }]}>Waiting for {partnerName || 'partner'} to confirm</Text>
       ) : null}
       {confirmedCount === 2 ? (
-        <Text style={styles.waitingText}>Both confirmed — capsule is sealing!</Text>
+        <Text style={[styles.waitingText, { color: theme.textSecondary }]}>Both confirmed — capsule is sealing!</Text>
       ) : null}
     </View>
   );
 
   const SealedInfo = () => (
     <View style={styles.actions}>
-      <Text style={styles.countdown}>{openCountdownText()}</Text>
-      <Text style={styles.muted}>Adding memories is closed</Text>
+      <Text style={[styles.countdown, { color: theme.accent }]}>{openCountdownText()}</Text>
+      <Text style={[styles.muted, { color: theme.textSecondary }]}>Adding memories is closed</Text>
     </View>
   );
 
   const OpenedInfo = () => (
     <View style={styles.actions}>
-      <Text style={styles.openedHeader}>🎉 Your capsule is open!</Text>
+      <Text style={[styles.openedHeader, { color: theme.success }]}>🎉 Your capsule is open!</Text>
     </View>
   );
 
@@ -492,22 +494,22 @@ export default function CapsuleDetailScreen({ navigation, route }) {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+        <View style={[styles.header, { backgroundColor: theme.header }]}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backArrow} numberOfLines={1}>
+            <Text style={[styles.backArrow, { color: theme.headerText }]} numberOfLines={1}>
               ‹ Back
             </Text>
           </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={[styles.headerTitle, { color: theme.headerText }]} numberOfLines={1} ellipsizeMode="tail">
             {capsule?.title || 'Capsule'}
           </Text>
           <View style={{ width: 32 }} />
         </View>
 
-        <View style={styles.contentCard}>
-          <View style={styles.center}>
-            <ActivityIndicator />
+        <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
+          <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+            <ActivityIndicator color={theme.accent} />
           </View>
         </View>
       </SafeAreaView>
@@ -516,23 +518,23 @@ export default function CapsuleDetailScreen({ navigation, route }) {
 
   if (errorText) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+        <View style={[styles.header, { backgroundColor: theme.header }]}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backArrow} numberOfLines={1}>
+            <Text style={[styles.backArrow, { color: theme.headerText }]} numberOfLines={1}>
               ‹ Back
             </Text>
           </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={[styles.headerTitle, { color: theme.headerText }]} numberOfLines={1} ellipsizeMode="tail">
             {capsule?.title || 'Capsule'}
           </Text>
           <View style={{ width: 32 }} />
         </View>
-        <View style={styles.contentCard}>
-          <View style={styles.center}>
-            <Text style={styles.errorText}>{errorText}</Text>
-            <Pressable style={styles.retryButton} onPress={load}>
-              <Text style={styles.retryText}>Retry</Text>
+        <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
+          <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+            <Text style={[styles.errorText, { color: theme.textSecondary }]}>{errorText}</Text>
+            <Pressable style={[styles.retryButton, { borderColor: theme.accent, backgroundColor: theme.bgPrimary }]} onPress={load}>
+              <Text style={[styles.retryText, { color: theme.accent }]}>Retry</Text>
             </Pressable>
           </View>
         </View>
@@ -541,26 +543,26 @@ export default function CapsuleDetailScreen({ navigation, route }) {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+      <View style={[styles.header, { backgroundColor: theme.header }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backArrow} numberOfLines={1}>
+          <Text style={[styles.backArrow, { color: theme.headerText }]} numberOfLines={1}>
             ‹ Back
           </Text>
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+        <Text style={[styles.headerTitle, { color: theme.headerText }]} numberOfLines={1} ellipsizeMode="tail">
           {capsule?.title || 'Capsule'}
         </Text>
         <View style={{ width: 32 }} />
       </View>
 
-      <View style={styles.contentCard}>
+      <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
         <FlatList
           data={posts}
           keyExtractor={(item) => item._id}
           renderItem={renderPost}
           ListHeaderComponent={ListHeader}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { backgroundColor: theme.bgPrimary }]}
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
         />
       </View>
@@ -576,30 +578,30 @@ export default function CapsuleDetailScreen({ navigation, route }) {
           resetAddModal();
         }}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={[styles.modalBackdrop, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
           <ScrollView
             contentContainerStyle={styles.modalScrollContent}
             keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>Add a Memory</Text>
+            <View style={[styles.modalCard, { backgroundColor: theme.bgCard }]}>
+              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>Add a Memory</Text>
 
               <TextInput
                 placeholder="Write a memory... (optional if adding photo/voice)"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.textMuted}
                 value={memoryText}
                 onChangeText={setMemoryText}
                 multiline
                 maxLength={2000}
                 editable={!isAdding}
-                style={styles.modalInput}
+                style={[styles.modalInput, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
               />
 
               <MoodPicker value={moodTag} onChange={setMoodTag} />
 
               {/* Media section */}
               <View style={styles.mediaSection}>
-                <Text style={styles.mediaLabel}>Add media (optional)</Text>
+                <Text style={[styles.mediaLabel, { color: theme.textSecondary }]}>Add media (optional)</Text>
 
                 <View style={styles.mediaRow}>
                   {/* Photo button */}
@@ -608,11 +610,12 @@ export default function CapsuleDetailScreen({ navigation, route }) {
                     disabled={isAdding || isRecording}
                     style={[
                       styles.mediaBtn,
-                      imageUri ? styles.mediaBtnActive : null,
+                      { backgroundColor: theme.bgCard, borderColor: theme.border },
+                      imageUri ? { backgroundColor: theme.accentLight, borderColor: theme.accent } : null,
                     ]}
                   >
                     <Text style={styles.mediaBtnIcon}>📷</Text>
-                    <Text style={styles.mediaBtnText}>
+                    <Text style={[styles.mediaBtnText, { color: theme.textSecondary }]}>
                       {imageUri ? 'Photo added ✓' : 'Add Photo'}
                     </Text>
                   </Pressable>
@@ -629,8 +632,9 @@ export default function CapsuleDetailScreen({ navigation, route }) {
                     disabled={isAdding || (imageUri != null)}
                     style={[
                       styles.mediaBtn,
-                      isRecording ? styles.mediaBtnRecording : null,
-                      recordingUri && !isRecording ? styles.mediaBtnActive : null,
+                      { backgroundColor: theme.bgCard, borderColor: theme.border },
+                      isRecording ? { backgroundColor: theme.errorLight, borderColor: theme.error } : null,
+                      recordingUri && !isRecording ? { backgroundColor: theme.accentLight, borderColor: theme.accent } : null,
                     ]}
                   >
                     <Text style={styles.mediaBtnIcon}>
@@ -639,7 +643,8 @@ export default function CapsuleDetailScreen({ navigation, route }) {
                     <Text
                       style={[
                         styles.mediaBtnText,
-                        isRecording ? styles.mediaBtnTextRecording : null,
+                        { color: theme.textSecondary },
+                        isRecording ? { color: theme.error } : null,
                       ]}
                     >
                       {isRecording
@@ -674,7 +679,7 @@ export default function CapsuleDetailScreen({ navigation, route }) {
                 {/* Discard recording */}
                 {recordingUri && !isRecording ? (
                   <Pressable onPress={discardRecording} style={styles.discardBtn}>
-                    <Text style={styles.discardText}>Discard recording</Text>
+                    <Text style={[styles.discardText, { color: theme.error }]}>Discard recording</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -682,7 +687,7 @@ export default function CapsuleDetailScreen({ navigation, route }) {
               {/* Buttons */}
               <View style={styles.modalButtons}>
                 <Pressable
-                  style={[styles.modalBtn, styles.modalCancelBtn]}
+                  style={[styles.modalBtn, styles.modalCancelBtn, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                   onPress={() => {
                     if (isAdding) return;
                     setShowAddModal(false);
@@ -690,14 +695,15 @@ export default function CapsuleDetailScreen({ navigation, route }) {
                   }}
                   disabled={isAdding}
                 >
-                  <Text style={styles.modalCancelText}>Cancel</Text>
+                  <Text style={[styles.modalCancelText, { color: theme.textSecondary }]}>Cancel</Text>
                 </Pressable>
 
                 <Pressable
                   style={[
                     styles.modalBtn,
                     styles.modalAddBtn,
-                    (!canSubmit || isWorking) && styles.modalAddDisabled,
+                    { backgroundColor: theme.accent },
+                    (!canSubmit || isWorking) && { backgroundColor: theme.bgMuted, opacity: 0.5 },
                   ]}
                   disabled={!canSubmit || isWorking}
                   onPress={submitAdd}

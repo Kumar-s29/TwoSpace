@@ -6,43 +6,46 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../context/ThemeContext';
 
 export default function MoreScreen({ navigation }) {
+  const { theme } = useTheme();
+
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>More</Text>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+      <View style={[styles.header, { backgroundColor: theme.header }]}>
+        <Text style={[styles.headerTitle, { color: theme.headerText }]}>More</Text>
       </View>
-      <View style={styles.contentCard}>
+      <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
         <View style={styles.grid}>
           
           <Pressable
-            style={styles.card}
+            style={[styles.card, { backgroundColor: theme.accentLight }]}
             onPress={() => 
               navigation.navigate('BucketList')
             }
           >
             <Text style={styles.cardEmoji}>🪣</Text>
-            <Text style={styles.cardTitle}>
+            <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>
               Bucket List
             </Text>
-            <Text style={styles.cardDesc}>
+            <Text style={[styles.cardDesc, { color: theme.textSecondary }]}>
               Things you want to{'\n'}
               do together
             </Text>
           </Pressable>
 
           <Pressable
-            style={styles.card}
+            style={[styles.card, { backgroundColor: theme.accentLight }]}
             onPress={() => 
               navigation.navigate('Milestones')
             }
           >
             <Text style={styles.cardEmoji}>🗓️</Text>
-            <Text style={styles.cardTitle}>
+            <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>
               Milestones
             </Text>
-            <Text style={styles.cardDesc}>
+            <Text style={[styles.cardDesc, { color: theme.textSecondary }]}>
               Important dates{'\n'}
               and anniversaries
             </Text>
@@ -52,12 +55,12 @@ export default function MoreScreen({ navigation }) {
 
         <View style={[styles.grid, { marginTop: 16 }]}>
           <Pressable
-            style={styles.card}
+            style={[styles.card, { backgroundColor: theme.accentLight }]}
             onPress={() => navigation.navigate('Settings')}
           >
             <Text style={styles.cardEmoji}>⚙️</Text>
-            <Text style={styles.cardTitle}>Settings</Text>
-            <Text style={styles.cardDesc}>
+            <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>Settings</Text>
+            <Text style={[styles.cardDesc, { color: theme.textSecondary }]}>
               Profile, space{'\n'}and account
             </Text>
           </Pressable>

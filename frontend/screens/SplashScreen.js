@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Dimensions, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const CIRCLE_SIZE = width * 0.28;
 
 export default function SplashScreen({ onFinish }) {
+  const { theme } = useTheme();
   const circlesOpacity = useRef(new Animated.Value(0)).current;
   const titleTranslateY = useRef(new Animated.Value(30)).current;
   const titleOpacity = useRef(new Animated.Value(0)).current;
@@ -55,7 +57,7 @@ export default function SplashScreen({ onFinish }) {
   }, []);
 
   return (
-    <Animated.View style={[styles.screen, { opacity: screenOpacity }]}>
+    <Animated.View style={[styles.screen, { opacity: screenOpacity, backgroundColor: theme.header }]}>
       <View style={styles.content}>
         {/* Two overlapping circles */}
         <Animated.View style={[styles.circlesWrap, { opacity: circlesOpacity }]}>

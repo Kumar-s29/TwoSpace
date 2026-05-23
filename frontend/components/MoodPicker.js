@@ -1,13 +1,16 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-
-const MOODS = [
-  { key: 'good', label: '🌤 Good', bg: '#D1FAE5', text: '#065F46' },
-  { key: 'okay', label: '⛅ Okay', bg: '#FEF3C7', text: '#92400E' },
-  { key: 'low', label: '🌧 Low', bg: '#DBEAFE', text: '#1E40AF' },
-];
+import { useTheme } from '../context/ThemeContext';
 
 export default function MoodPicker({ value, onChange }) {
+  const { theme } = useTheme();
+
+  const moods = [
+    { key: 'good', label: '🌤 Good', bg: theme.moodGoodBg, text: theme.moodGoodText },
+    { key: 'okay', label: '⛅ Okay', bg: theme.moodOkayBg, text: theme.moodOkayText },
+    { key: 'low', label: '🌧 Low', bg: theme.moodLowBg, text: theme.moodLowText },
+  ];
+
   const onPress = (next) => {
     const v = value === next ? null : next;
     if (typeof onChange === 'function') onChange(v);
@@ -15,9 +18,9 @@ export default function MoodPicker({ value, onChange }) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>How are you feeling?</Text>
+      <Text style={[styles.label, { color: theme.textSecondary }]}>How are you feeling?</Text>
       <View style={styles.row}>
-        {MOODS.map((m) => {
+        {moods.map((m) => {
           const selected = value === m.key;
           return (
             <Pressable
@@ -27,13 +30,15 @@ export default function MoodPicker({ value, onChange }) {
                 styles.pill,
                 selected
                   ? { backgroundColor: m.bg, borderColor: m.bg }
-                  : styles.pillUnselected,
+                  : [styles.pillUnselected, { backgroundColor: theme.bgInput, borderColor: theme.border }],
               ]}
             >
               <Text
                 style={[
                   styles.pillText,
-                  selected ? { color: m.text } : styles.pillTextUnselected,
+                  selected
+                    ? { color: m.text }
+                    : [styles.pillTextUnselected, { color: theme.textSecondary }],
                 ]}
               >
                 {m.label}

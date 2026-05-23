@@ -15,8 +15,10 @@ import dayjs from 'dayjs';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createWish } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function WishScreen({ navigation }) {
+  const { theme } = useTheme();
   const [label, setLabel] = useState('');
   const [content, setContent] = useState('');
   const [unlockDate, setUnlockDate] = useState(null);
@@ -133,17 +135,17 @@ export default function WishScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#4F46B8' }}>
-      <View style={styles.header}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.header }}>
+      <View style={[styles.header, { backgroundColor: theme.header }]}>
         <Pressable onPress={() => navigation.goBack()} disabled={isSubmitting}>
-          <Text style={styles.cancel}>Cancel</Text>
+          <Text style={[styles.cancel, { color: theme.headerText, opacity: 0.8 }]}>Cancel</Text>
         </Pressable>
 
-        <Text style={styles.headerTitle}>Timed Wish</Text>
+        <Text style={[styles.headerTitle, { color: theme.headerText }]}>Timed Wish</Text>
 
         <Pressable onPress={onSubmit} disabled={!canSend}>
           {isSubmitting ? (
-            <ActivityIndicator color="#C2185B" />
+            <ActivityIndicator color={theme.accent} />
           ) : (
             <Text style={[styles.send, !canSend && styles.sendDisabled]}>🔒 Seal & Send</Text>
           )}
@@ -153,32 +155,34 @@ export default function WishScreen({ navigation }) {
       <ScrollView
         style={{
           flex: 1,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.bgPrimary,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
         }}
         contentContainerStyle={{ padding: 20, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.sectionLabel}>What's the occasion?</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>What's the occasion?</Text>
         <TextInput
           value={label}
           onChangeText={setLabel}
           placeholder="Occasion (e.g. Birthday, Anniversary)"
+          placeholderTextColor={theme.textMuted}
           maxLength={40}
-          style={styles.labelInput}
+          style={[styles.labelInput, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
           editable={!isSubmitting}
         />
 
-        <Text style={[styles.sectionLabel, { marginTop: 18 }]}>Wish message</Text>
+        <Text style={[styles.sectionLabel, { marginTop: 18, color: theme.textSecondary }]}>Wish message</Text>
         <TextInput
           value={content}
           onChangeText={setContent}
           placeholder="Write your heartfelt message..."
+          placeholderTextColor={theme.textMuted}
           autoFocus
           multiline
           maxLength={5000}
-          style={styles.messageInput}
+          style={[styles.messageInput, { color: theme.textPrimary }]}
           editable={!isSubmitting}
           textAlignVertical="top"
         />
@@ -188,15 +192,15 @@ export default function WishScreen({ navigation }) {
           </Text>
         </View>
 
-        <Text style={[styles.sectionLabel, { marginTop: 18 }]}>When should this open?</Text>
-        <Pressable onPress={onOpenPicker} style={styles.dateBox} disabled={isSubmitting}>
-          <Text style={[styles.dateText, unlockDate ? styles.dateTextSelected : styles.dateTextEmpty]}>
+        <Text style={[styles.sectionLabel, { marginTop: 18, color: theme.textSecondary }]}>When should this open?</Text>
+        <Pressable onPress={onOpenPicker} style={[styles.dateBox, { backgroundColor: theme.bgInput, borderColor: theme.border }]} disabled={isSubmitting}>
+          <Text style={[styles.dateText, unlockDate ? [styles.dateTextSelected, { color: theme.accent }] : [styles.dateTextEmpty, { color: theme.textMuted }]]}>
             {unlockDate ? formattedDateText : 'Tap to choose a date & time'}
           </Text>
         </Pressable>
 
         {showTooSoonError ? (
-          <Text style={styles.inlineError}>Please choose a time at least 1 hour from now.</Text>
+          <Text style={[styles.inlineError, { color: theme.error }]}>Please choose a time at least 1 hour from now.</Text>
         ) : null}
 
         {Platform.OS === 'android' && showDatePicker ? (
@@ -226,8 +230,8 @@ export default function WishScreen({ navigation }) {
           />
         ) : null}
 
-        <View style={styles.callout}>
-          <Text style={styles.calloutText}>
+        <View style={[styles.callout, { backgroundColor: theme.accentLight }]}>
+          <Text style={[styles.calloutText, { color: theme.accent }]}>
             💌 Your message will stay sealed until the moment you choose. They'll know something is waiting —
             but they can't open it early.
           </Text>

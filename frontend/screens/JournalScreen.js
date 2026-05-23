@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import dayjs from 'dayjs';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { 
   addJournalEntry, 
   getAllJournals, 
@@ -27,6 +28,7 @@ import {
 
 export default function JournalScreen() {
   const { user } = useContext(AuthContext);
+  const { theme } = useTheme();
 
   const [todayJournal, setTodayJournal] = useState(null);
   const [onThisDay, setOnThisDay] = useState([]);
@@ -231,22 +233,22 @@ export default function JournalScreen() {
       ? entry.authorId.displayName[0].toUpperCase()
       : '?';
     return (
-      <View key={index} style={styles.entryRow}>
+      <View key={index} style={[styles.entryRow, { borderBottomColor: theme.border }]}>
         <View style={[
           styles.entryCircle,
           isOwn 
-            ? styles.entryCircleOwn 
-            : styles.entryCirclePartner,
+            ? [styles.entryCircleOwn, { backgroundColor: theme.accent }] 
+            : [styles.entryCirclePartner, { backgroundColor: theme.pink }],
         ]}>
           <Text style={styles.entryInitial}>
             {initial}
           </Text>
         </View>
         <View style={styles.entryBody}>
-          <Text style={styles.entryContent}>
+          <Text style={[styles.entryContent, { color: theme.textPrimary }]}>
             {entry.content}
           </Text>
-          <Text style={styles.entryTime}>
+          <Text style={[styles.entryTime, { color: theme.textMuted }]}>
             {dayjs(entry.createdAt).format('h:mm A')}
           </Text>
         </View>
@@ -260,15 +262,15 @@ export default function JournalScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.screen}>
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
             Our Journal
           </Text>
         </View>
-        <View style={styles.contentCard}>
-          <View style={styles.center}>
-            <ActivityIndicator />
+        <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
+          <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+            <ActivityIndicator color={theme.accent} />
           </View>
         </View>
       </SafeAreaView>
@@ -279,20 +281,20 @@ export default function JournalScreen() {
     <View>
       {/* Daily question */}
       {checkIn ? (
-        <View style={styles.questionSection}>
+        <View style={[styles.questionSection, { borderBottomColor: theme.border }]}>
           {/* Question card */}
-          <View style={styles.questionCard}>
+          <View style={[styles.questionCard, { backgroundColor: theme.questionBg }]}>
             <View style={styles.questionTopRow}>
-              <Text style={styles.questionLabel}>
+              <Text style={[styles.questionLabel, { color: theme.accent }]}>
                 💬 Today's Question
               </Text>
               {checkIn.isCustom ? (
-                <Text style={styles.customBadge}>
+                <Text style={[styles.customBadge, { backgroundColor: theme.pinkLight, color: theme.pink }]}>
                   Custom
                 </Text>
               ) : null}
             </View>
-            <Text style={styles.questionText}>
+            <Text style={[styles.questionText, { color: theme.questionText }]}>
               {checkIn.question}
             </Text>
           </View>
@@ -314,18 +316,18 @@ export default function JournalScreen() {
                     <View style={[
                       styles.answerCircle,
                       isOwn 
-                        ? styles.entryCircleOwn 
-                        : styles.entryCirclePartner,
+                        ? [styles.entryCircleOwn, { backgroundColor: theme.accent }] 
+                        : [styles.entryCirclePartner, { backgroundColor: theme.pink }],
                     ]}>
                       <Text style={styles.entryInitial}>
                         {initial}
                       </Text>
                     </View>
                     <View style={styles.answerBody}>
-                      <Text style={styles.answerContent}>
+                      <Text style={[styles.answerContent, { color: theme.textPrimary }]}>
                         {answer.content}
                       </Text>
-                      <Text style={styles.answerTime}>
+                      <Text style={[styles.answerTime, { color: theme.textMuted }]}>
                         {dayjs(answer.createdAt)
                           .format('h:mm A')}
                       </Text>
@@ -343,9 +345,10 @@ export default function JournalScreen() {
                 value={answerText}
                 onChangeText={setAnswerText}
                 placeholder="Your answer..."
+                placeholderTextColor={theme.textMuted}
                 multiline
                 maxLength={1000}
-                style={styles.answerInput}
+                style={[styles.answerInput, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
                 editable={!isAnswering}
               />
               <Pressable
@@ -355,6 +358,7 @@ export default function JournalScreen() {
                 }
                 style={[
                   styles.answerBtn,
+                  { backgroundColor: theme.accent },
                   (!answerText.trim() || isAnswering) 
                     && { opacity: 0.5 }
                 ]}
@@ -369,7 +373,7 @@ export default function JournalScreen() {
               </Pressable>
             </View>
           ) : (
-            <Text style={styles.answeredLabel}>
+            <Text style={[styles.answeredLabel, { color: theme.accent }]}>
               ✓ You answered today
             </Text>
           )}
@@ -382,7 +386,7 @@ export default function JournalScreen() {
               }
               style={styles.customToggle}
             >
-              <Text style={styles.customToggleText}>
+              <Text style={[styles.customToggleText, { color: theme.textMuted }]}>
                 {showCustomInput 
                   ? 'Cancel' 
                   : '✏️ Set a custom question instead'
@@ -398,14 +402,16 @@ export default function JournalScreen() {
                 value={customQuestion}
                 onChangeText={setCustomQuestion}
                 placeholder="Write your question..."
+                placeholderTextColor={theme.textMuted}
                 maxLength={200}
-                style={styles.customInput}
+                style={[styles.customInput, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
               />
               <Pressable
                 onPress={onSubmitCustom}
                 disabled={customQuestion.trim().length < 5}
                 style={[
                   styles.customBtn,
+                  { backgroundColor: theme.pink },
                   customQuestion.trim().length < 5 
                     && { opacity: 0.5 }
                 ]}
@@ -421,8 +427,8 @@ export default function JournalScreen() {
 
       {/* On this day section */}
       {onThisDay.length > 0 ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+        <View style={[styles.section, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>
             ✨ On this day
           </Text>
           <ScrollView 
@@ -433,14 +439,14 @@ export default function JournalScreen() {
             }}
           >
             {onThisDay.map((memory, i) => (
-              <View key={i} style={styles.memoryCard}>
-                <Text style={styles.memoryLabel}>
+              <View key={i} style={[styles.memoryCard, { backgroundColor: theme.memoryBg, borderColor: theme.memoryBorder }]}>
+                <Text style={[styles.memoryLabel, { color: theme.pinnedText }]}>
                   {memory.label}
                 </Text>
-                <Text style={styles.memoryContent} numberOfLines={3}>
+                <Text style={[styles.memoryContent, { color: theme.pinnedText }]} numberOfLines={3}>
                   {memory.post.content || '📷 A photo'}
                 </Text>
-                <Text style={styles.memoryDate}>
+                <Text style={[styles.memoryDate, { color: theme.pinnedText, opacity: 0.8 }]}>
                   {dayjs(memory.post.createdAt).format('MMM D, YYYY')}
                 </Text>
               </View>
@@ -450,8 +456,8 @@ export default function JournalScreen() {
       ) : null}
 
       {/* Today's journal */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
+      <View style={[styles.section, { borderBottomColor: theme.border }]}>
+        <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>
           Today — {todayFormatted}
         </Text>
 
@@ -464,7 +470,7 @@ export default function JournalScreen() {
           </View>
         ) : (
           <View style={styles.emptyToday}>
-            <Text style={styles.emptyTodayText}>
+            <Text style={[styles.emptyTodayText, { color: theme.textMuted }]}>
               📖 Nothing written today yet.{'\n'}
               Be the first to add a thought.
             </Text>
@@ -472,18 +478,19 @@ export default function JournalScreen() {
         )}
 
         {/* Add entry input */}
-        <View style={styles.inputWrap}>
+        <View style={[styles.inputWrap, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
           <TextInput
             value={entryText}
             onChangeText={setEntryText}
             placeholder="Write something for today..."
+            placeholderTextColor={theme.textMuted}
             multiline
             maxLength={3000}
-            style={styles.entryInput}
+            style={[styles.entryInput, { color: theme.textPrimary }]}
             editable={!isSubmitting}
           />
-          <View style={styles.inputFooter}>
-            <Text style={styles.entryCounter}>
+          <View style={[styles.inputFooter, { backgroundColor: theme.bgCard, borderTopColor: theme.border }]}>
+            <Text style={[styles.entryCounter, { color: theme.textMuted }]}>
               {entryText.length} / 3000
             </Text>
             <Pressable
@@ -493,6 +500,7 @@ export default function JournalScreen() {
               }
               style={[
                 styles.addBtn,
+                { backgroundColor: theme.accent },
                 (!entryText.trim() || isSubmitting) 
                   && { opacity: 0.5 }
               ]}
@@ -512,7 +520,7 @@ export default function JournalScreen() {
       {/* Past entries header */}
       {pastJournals.length > 0 ? (
         <View style={styles.pastHeader}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>
             Past entries
           </Text>
         </View>
@@ -521,20 +529,25 @@ export default function JournalScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
           Our Journal
         </Text>
       </View>
 
-      <View style={styles.contentCard}>
+      <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
         <FlatList
           data={pastJournals}
           keyExtractor={(item) => item.date}
           ListHeaderComponent={ListHeader}
           onEndReached={onLoadMore}
           onEndReachedThreshold={0.4}
+          style={{ backgroundColor: theme.bgPrimary }}
+          contentContainerStyle={{ 
+            backgroundColor: theme.bgPrimary,
+            paddingBottom: 24 
+          }}
           refreshControl={
             <RefreshControl 
               refreshing={isRefreshing} 
@@ -543,21 +556,21 @@ export default function JournalScreen() {
           }
           renderItem={({ item }) => (
             <Pressable
-              style={styles.pastCard}
+              style={[styles.pastCard, { backgroundColor: theme.bgSecondary }]}
               onPress={() => toggleExpand(item.date)}
             >
               <View style={styles.pastCardTop}>
-                <Text style={styles.pastCardDate}>
+                <Text style={[styles.pastCardDate, { color: theme.textPrimary }]}>
                   {dayjs(item.date).format(
                     'dddd, MMMM D, YYYY'
                   )}
                 </Text>
-                <Text style={styles.pastCardCount}>
+                <Text style={[styles.pastCardCount, { color: theme.textSecondary }]}>
                   {item.entries?.length || 0} thoughts
                 </Text>
               </View>
               {expandedDates[item.date] ? (
-                <View style={styles.pastEntries}>
+                <View style={[styles.pastEntries, { borderTopColor: theme.border }]}>
                   {(item.entries || []).map(
                     (entry, i) => 
                       renderEntry(entry, i)
@@ -567,9 +580,9 @@ export default function JournalScreen() {
             </Pressable>
           )}
           ListFooterComponent={
-            <View>
+            <View style={{ backgroundColor: theme.bgPrimary }}>
               {isLoadingMore 
-                ? <ActivityIndicator 
+                ? <ActivityIndicator color={theme.accent}
                     style={{ padding: 16 }} /> 
                 : null
               }
@@ -577,28 +590,28 @@ export default function JournalScreen() {
               {/* Check-in history */}
               {checkInHistory.length > 0 ? (
                 <View style={styles.pastHeader}>
-                  <Text style={styles.sectionTitle}>
+                  <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>
                     Past questions
                   </Text>
                   {checkInHistory.map((item, i) => (
                     <Pressable
                       key={item.date}
-                      style={styles.pastCard}
+                      style={[styles.pastCard, { backgroundColor: theme.bgSecondary }]}
                       onPress={() => 
                         toggleExpand('ci_' + item.date)
                       }
                     >
                       <View style={styles.pastCardTop}>
-                        <Text style={styles.pastCardDate}
+                        <Text style={[styles.pastCardDate, { color: theme.textPrimary }]}
                           numberOfLines={1}>
                           {item.question}
                         </Text>
-                        <Text style={styles.pastCardCount}>
+                        <Text style={[styles.pastCardCount, { color: theme.textSecondary }]}>
                           {item.answers?.length || 0} answers
                         </Text>
                       </View>
                       {expandedDates['ci_' + item.date] ? (
-                        <View style={styles.pastEntries}>
+                        <View style={[styles.pastEntries, { borderTopColor: theme.border }]}>
                           {(item.answers || []).map(
                             (a, ai) => {
                               const isOwn = 
@@ -615,8 +628,8 @@ export default function JournalScreen() {
                                   <View style={[
                                     styles.answerCircle,
                                     isOwn 
-                                      ? styles.entryCircleOwn 
-                                      : styles.entryCirclePartner,
+                                      ? [styles.entryCircleOwn, { backgroundColor: theme.accent }] 
+                                      : [styles.entryCirclePartner, { backgroundColor: theme.pink }],
                                   ]}>
                                     <Text style={
                                       styles.entryInitial
@@ -625,9 +638,10 @@ export default function JournalScreen() {
                                     </Text>
                                   </View>
                                   <View style={styles.answerBody}>
-                                    <Text style={
-                                      styles.answerContent
-                                    }>
+                                    <Text style={[
+                                      styles.answerContent,
+                                      { color: theme.textPrimary }
+                                    ]}>
                                       {a.content}
                                     </Text>
                                   </View>
@@ -649,7 +663,7 @@ export default function JournalScreen() {
                       }}
                     >
                       <Text style={{ 
-                        color: '#4F46B8', 
+                        color: theme.accent, 
                         fontWeight: '700' 
                       }}>
                         Load more
@@ -663,9 +677,6 @@ export default function JournalScreen() {
             </View>
           }
           ListEmptyComponent={null}
-          contentContainerStyle={{ 
-            paddingBottom: 24 
-          }}
         />
       </View>
     </SafeAreaView>

@@ -13,11 +13,13 @@ import { useNavigation } from '@react-navigation/native';
 
 import { register as registerApi } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DISPLAYNAME_REGEX = /^[A-Za-z0-9 -]+$/;
 
 export default function RegisterScreen() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const { login } = useContext(AuthContext);
 
@@ -146,27 +148,28 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.screen}
+      style={[styles.screen, { backgroundColor: theme.bgPrimary }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.bgPrimary }]}>
         <View style={styles.content}>
-          <Text style={styles.title}>TwoSpace</Text>
-          <Text style={styles.subtitle}>Create your account</Text>
+          <Text style={[styles.title, { color: theme.accent }]}>TwoSpace</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Create your account</Text>
 
           <TextInput
             value={displayName}
             onChangeText={setDisplayName}
             onBlur={onBlurDisplayName}
             placeholder="Display name"
+            placeholderTextColor={theme.textMuted}
             autoCapitalize="words"
             maxLength={30}
             autoCorrect={false}
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
             editable={!isSubmitting}
           />
           {touched.displayName && fieldErrors.displayName ? (
-            <Text style={styles.fieldError}>{fieldErrors.displayName}</Text>
+            <Text style={[styles.fieldError, { color: theme.error }]}>{fieldErrors.displayName}</Text>
           ) : null}
 
           <TextInput
@@ -174,14 +177,15 @@ export default function RegisterScreen() {
             onChangeText={setEmail}
             onBlur={onBlurEmail}
             placeholder="Email"
+            placeholderTextColor={theme.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
             editable={!isSubmitting}
           />
           {touched.email && fieldErrors.email ? (
-            <Text style={styles.fieldError}>{fieldErrors.email}</Text>
+            <Text style={[styles.fieldError, { color: theme.error }]}>{fieldErrors.email}</Text>
           ) : null}
 
           <TextInput
@@ -189,14 +193,15 @@ export default function RegisterScreen() {
             onChangeText={setPassword}
             onBlur={onBlurPassword}
             placeholder="Password"
+            placeholderTextColor={theme.textMuted}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
             editable={!isSubmitting}
           />
           {touched.password && fieldErrors.password ? (
-            <Text style={styles.fieldError}>{fieldErrors.password}</Text>
+            <Text style={[styles.fieldError, { color: theme.error }]}>{fieldErrors.password}</Text>
           ) : null}
 
           <Pressable
@@ -204,18 +209,19 @@ export default function RegisterScreen() {
             disabled={!canSubmit}
             style={({ pressed }) => [
               styles.button,
+              { backgroundColor: theme.accent },
               (!canSubmit || isSubmitting) && styles.buttonDisabled,
               pressed && canSubmit && !isSubmitting ? styles.buttonPressed : null,
             ]}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={theme.accentText} />
             ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
+              <Text style={[styles.buttonText, { color: theme.accentText }]}>Create Account</Text>
             )}
           </Pressable>
 
-          {genericError ? <Text style={styles.genericError}>{genericError}</Text> : null}
+          {genericError ? <Text style={[styles.genericError, { color: theme.error }]}>{genericError}</Text> : null}
         </View>
 
         <Pressable
@@ -223,8 +229,8 @@ export default function RegisterScreen() {
           style={styles.footer}
           disabled={isSubmitting}
         >
-          <Text style={styles.footerText}>
-            Already have an account? <Text style={styles.footerLink}>Log In</Text>
+          <Text style={[styles.footerText, { color: theme.textSecondary }]}>
+            Already have an account? <Text style={[styles.footerLink, { color: theme.accent }]}>Log In</Text>
           </Text>
         </Pressable>
       </View>

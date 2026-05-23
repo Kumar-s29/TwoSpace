@@ -13,8 +13,10 @@ import { useNavigation } from '@react-navigation/native';
 
 import { login as loginApi } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function LoginScreen() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const { login } = useContext(AuthContext);
 
@@ -63,22 +65,23 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.screen}
+      style={[styles.screen, { backgroundColor: theme.bgPrimary }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.bgPrimary }]}>
         <View style={styles.content}>
-          <Text style={styles.title}>TwoSpace</Text>
-          <Text style={styles.subtitle}>Your private space</Text>
+          <Text style={[styles.title, { color: theme.accent }]}>TwoSpace</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Your private space</Text>
 
           <TextInput
             value={email}
             onChangeText={setEmail}
             placeholder="Email"
+            placeholderTextColor={theme.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
             editable={!isSubmitting}
           />
 
@@ -86,28 +89,30 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             placeholder="Password"
+            placeholderTextColor={theme.textMuted}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
             editable={!isSubmitting}
           />
 
-          {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+          {errorText ? <Text style={[styles.error, { color: theme.error }]}>{errorText}</Text> : null}
 
           <Pressable
             onPress={onSubmit}
             disabled={!canSubmit}
             style={({ pressed }) => [
               styles.button,
+              { backgroundColor: theme.accent },
               (!canSubmit || isSubmitting) && styles.buttonDisabled,
               pressed && canSubmit && !isSubmitting ? styles.buttonPressed : null,
             ]}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={theme.accentText} />
             ) : (
-              <Text style={styles.buttonText}>Log In</Text>
+              <Text style={[styles.buttonText, { color: theme.accentText }]}>Log In</Text>
             )}
           </Pressable>
         </View>
@@ -117,8 +122,8 @@ export default function LoginScreen() {
           style={styles.footer}
           disabled={isSubmitting}
         >
-          <Text style={styles.footerText}>
-            Don&apos;t have an account? <Text style={styles.footerLink}>Register</Text>
+          <Text style={[styles.footerText, { color: theme.textSecondary }]}>
+            Don&apos;t have an account? <Text style={[styles.footerLink, { color: theme.accent }]}>Register</Text>
           </Text>
         </Pressable>
       </View>

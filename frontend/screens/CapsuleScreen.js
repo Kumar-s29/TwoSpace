@@ -16,8 +16,10 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createCapsule, getMyCapsules } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function CapsuleScreen({ navigation }) {
+  const { theme } = useTheme();
   const [capsules, setCapsules] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -74,10 +76,10 @@ export default function CapsuleScreen({ navigation }) {
   };
 
   const statusMeta = (status) => {
-    if (status === 'collecting') return { bg: '#DBEAFE', fg: '#1E40AF', text: 'Adding memories' };
-    if (status === 'sealed') return { bg: '#F0EFFC', fg: '#4F46B8', text: 'Sealed 🔒' };
-    if (status === 'opened') return { bg: '#D1FAE5', fg: '#065F46', text: 'Opened 🎉' };
-    return { bg: '#E5E7EB', fg: '#111827', text: status || 'Unknown' };
+    if (status === 'collecting') return { bg: theme.moodLowBg, fg: theme.moodLowText, text: 'Adding memories' };
+    if (status === 'sealed') return { bg: theme.accentLight, fg: theme.accent, text: 'Sealed 🔒' };
+    if (status === 'opened') return { bg: theme.successLight, fg: theme.successText, text: 'Opened 🎉' };
+    return { bg: theme.bgSecondary, fg: theme.textPrimary, text: status || 'Unknown' };
   };
 
   const isDateTooSoon = useMemo(() => {
@@ -120,26 +122,26 @@ export default function CapsuleScreen({ navigation }) {
 
     return (
       <Pressable
-        style={styles.card}
+        style={[styles.card, { backgroundColor: theme.bgCard, shadowColor: theme.shadow }]}
         onPress={() => navigation.navigate('CapsuleDetail', { capsuleId: item._id })}
       >
         <View style={styles.cardTopRow}>
-          <Text style={styles.cardTitle}>{item?.title || 'Untitled'}</Text>
+          <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>{item?.title || 'Untitled'}</Text>
           <View style={[styles.badge, { backgroundColor: meta.bg }]}>
             <Text style={[styles.badgeText, { color: meta.fg }]}>{meta.text}</Text>
           </View>
         </View>
 
-        <Text style={styles.cardSub}>Opens on {opensText}</Text>
+        <Text style={[styles.cardSub, { color: theme.textSecondary }]}>Opens on {opensText}</Text>
         {item?.status === 'collecting' ? (
-          <Text style={styles.cardSub}>{confirmedCount} of 2 confirmed</Text>
+          <Text style={[styles.cardSub, { color: theme.textSecondary }]}>{confirmedCount} of 2 confirmed</Text>
         ) : null}
       </Pressable>
     );
   };
 
   const Header = (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: theme.header }]}>
       <Text style={styles.headerTitle}>Memory Capsules</Text>
       <Pressable onPress={() => setShowModal(true)} style={styles.newBtn}>
         <Text style={styles.newBtnText}>+ New</Text>
@@ -149,11 +151,11 @@ export default function CapsuleScreen({ navigation }) {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.screen}>
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
         {Header}
-        <View style={styles.contentCard}>
-          <View style={styles.center}>
-            <ActivityIndicator />
+        <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
+          <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+            <ActivityIndicator color={theme.accent} />
           </View>
         </View>
       </SafeAreaView>
@@ -161,15 +163,15 @@ export default function CapsuleScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
       {Header}
 
-      <View style={styles.contentCard}>
+      <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
       {errorText ? (
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{errorText}</Text>
-          <Pressable style={styles.retryButton} onPress={load}>
-            <Text style={styles.retryText}>Retry</Text>
+        <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+          <Text style={[styles.errorText, { color: theme.textSecondary }]}>{errorText}</Text>
+          <Pressable style={[styles.retryButton, { borderColor: theme.accent }]} onPress={load}>
+            <Text style={[styles.retryText, { color: theme.accent }]}>Retry</Text>
           </Pressable>
         </View>
       ) : (
@@ -177,11 +179,12 @@ export default function CapsuleScreen({ navigation }) {
           data={capsules}
           keyExtractor={(item) => item._id}
           renderItem={renderItem}
-          contentContainerStyle={capsules.length === 0 ? styles.emptyContainer : styles.listContainer}
+          style={{ backgroundColor: theme.bgPrimary }}
+          contentContainerStyle={capsules.length === 0 ? [styles.emptyContainer, { backgroundColor: theme.bgPrimary }] : [styles.listContainer, { backgroundColor: theme.bgPrimary }]}
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                 📦 No capsules yet. Create your{'\n'}first shared memory capsule.
               </Text>
             </View>
@@ -201,21 +204,22 @@ export default function CapsuleScreen({ navigation }) {
         }}
       >
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>New Memory Capsule</Text>
+          <View style={[styles.modalCard, { backgroundColor: theme.bgCard }]}>
+            <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>New Memory Capsule</Text>
 
             <TextInput
               placeholder="e.g. Our 2026, Summer Trip..."
+              placeholderTextColor={theme.textMuted}
               value={title}
               onChangeText={setTitle}
               maxLength={60}
               editable={!isCreating}
-              style={styles.modalInput}
+              style={[styles.modalInput, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
             />
 
-            <Text style={styles.modalLabel}>When should it open?</Text>
+            <Text style={[styles.modalLabel, { color: theme.textSecondary }]}>When should it open?</Text>
             <Pressable
-              style={styles.dateBox}
+              style={[styles.dateBox, { backgroundColor: theme.bgInput, borderColor: theme.border }]}
               onPress={() => {
                 if (isCreating) return;
                 if (Platform.OS === 'ios') {
@@ -225,7 +229,7 @@ export default function CapsuleScreen({ navigation }) {
                 }
               }}
             >
-              <Text style={[styles.dateText, opensAt ? styles.dateTextSelected : null]}>
+              <Text style={[styles.dateText, { color: theme.textMuted }, opensAt ? [styles.dateTextSelected, { color: theme.accent }] : null]}>
                 {opensAt
                   ? dayjs(opensAt).format('dddd, MMMM D [at] h:mm A')
                   : 'Tap to choose a date & time'}
@@ -248,7 +252,7 @@ export default function CapsuleScreen({ navigation }) {
             ) : null}
 
             {didPickDate && isDateTooSoon ? (
-              <Text style={styles.dateError}>Please choose a time at least 1 hour from now.</Text>
+              <Text style={[styles.dateError, { color: theme.error }]}>Please choose a time at least 1 hour from now.</Text>
             ) : null}
 
             {Platform.OS === 'android' && showDatePicker ? (
@@ -294,21 +298,22 @@ export default function CapsuleScreen({ navigation }) {
 
             <View style={styles.modalButtons}>
               <Pressable
-                style={[styles.modalBtn, styles.modalCancelBtn]}
+                style={[styles.modalBtn, styles.modalCancelBtn, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                 onPress={() => {
                   if (isCreating) return;
                   setShowModal(false);
                   resetModal();
                 }}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: theme.textSecondary }]}>Cancel</Text>
               </Pressable>
 
               <Pressable
                 style={[
                   styles.modalBtn,
                   styles.modalCreateBtn,
-                  (!canCreate || isCreating) && styles.modalCreateDisabled,
+                  { backgroundColor: theme.pink },
+                  (!canCreate || isCreating) && { backgroundColor: theme.bgMuted, opacity: 0.5 },
                 ]}
                 disabled={!canCreate || isCreating}
                 onPress={submitCreate}

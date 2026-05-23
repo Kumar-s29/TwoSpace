@@ -12,11 +12,12 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { useTheme } from '../context/ThemeContext';
 import { AuthContext } from '../context/AuthContext';
 import { createInvite, getMyRoom, joinRoom } from '../services/api';
 
 export default function SetupScreen() {
+  const { theme } = useTheme();
   const { logout, updateUser } = useContext(AuthContext);
 
   const [isCheckingRoom, setIsCheckingRoom] = useState(true);
@@ -176,52 +177,52 @@ export default function SetupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
       <KeyboardAvoidingView
-        style={styles.screen}
+        style={[styles.screen, { backgroundColor: theme.header }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.header }]}>
         <View style={styles.header}>
-          <Text style={styles.title}>TwoSpace</Text>
-          <Text style={styles.subtitle}>Connect with someone special</Text>
+          <Text style={[styles.title, { color: theme.headerText }]}>TwoSpace</Text>
+          <Text style={[styles.subtitle, { color: theme.textInverse }]}>Connect with someone special</Text>
         </View>
 
-        <View style={styles.contentCard}>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Create your invite link</Text>
-            <Text style={styles.cardDesc}>
+        <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
+          <View style={[styles.card, { backgroundColor: theme.bgSecondary }]}>
+            <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>Create your invite link</Text>
+            <Text style={[styles.cardDesc, { color: theme.textSecondary }]}>
               Generate a private link and share it with one person. Once they join, your space is sealed.
             </Text>
 
             {httpsLink ? (
               <>
                 <View style={styles.linkRow}>
-                  <View style={styles.linkBox}>
-                    <Text style={styles.linkText} numberOfLines={2}>
+                  <View style={[styles.linkBox, { backgroundColor: theme.accentLight }]}>
+                    <Text style={[styles.linkText, { color: theme.accent }]} numberOfLines={2}>
                       {httpsLink}
                     </Text>
                   </View>
-                  <Pressable onPress={onCopy} style={styles.outlineButton}>
-                    <Text style={styles.outlineButtonText}>Copy Link</Text>
+                  <Pressable onPress={onCopy} style={[styles.outlineButton, { borderColor: theme.accent, backgroundColor: theme.bgPrimary }]}>
+                    <Text style={[styles.outlineButtonText, { color: theme.accent }]}>Copy Link</Text>
                   </Pressable>
                 </View>
 
-                {copiedVisible ? <Text style={styles.copied}>Copied!</Text> : null}
+                {copiedVisible ? <Text style={[styles.copied, { color: theme.accent }]}>Copied!</Text> : null}
 
-                <Pressable onPress={onShare} style={[styles.outlineButton, styles.shareButton]}>
-                  <Text style={styles.outlineButtonText}>Share Link</Text>
+                <Pressable onPress={onShare} style={[styles.outlineButton, styles.shareButton, { borderColor: theme.accent, backgroundColor: theme.bgPrimary }]}>
+                  <Text style={[styles.outlineButtonText, { color: theme.accent }]}>Share Link</Text>
                 </Pressable>
 
                 {remaining ? (
-                  <Text style={styles.expiry}>
+                  <Text style={[styles.expiry, { color: theme.textSecondary }]}>
                     This link expires in {remaining.hours} hours {remaining.minutes} minutes
                   </Text>
                 ) : null}
 
-                <Text style={styles.note}>Or share this deep link for app users:</Text>
-                <View style={styles.deepLinkBox}>
-                  <Text style={styles.deepLinkText} numberOfLines={2}>
+                <Text style={[styles.note, { color: theme.textSecondary }]}>Or share this deep link for app users:</Text>
+                <View style={[styles.deepLinkBox, { backgroundColor: theme.accentLight }]}>
+                  <Text style={[styles.deepLinkText, { color: theme.accent }]} numberOfLines={2}>
                     {deepLink}
                   </Text>
                 </View>
@@ -232,23 +233,24 @@ export default function SetupScreen() {
                 disabled={isGenerating || isCheckingRoom}
                 style={({ pressed }) => [
                   styles.primaryButton,
+                  { backgroundColor: theme.accent },
                   (isGenerating || isCheckingRoom) && styles.primaryButtonDisabled,
                   pressed && !(isGenerating || isCheckingRoom) ? styles.primaryButtonPressed : null,
                 ]}
               >
                 {isGenerating || isCheckingRoom ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                  <ActivityIndicator color={theme.accentText} />
                 ) : (
-                  <Text style={styles.primaryButtonText}>Generate Link</Text>
+                  <Text style={[styles.primaryButtonText, { color: theme.accentText }]}>Generate Link</Text>
                 )}
               </Pressable>
             )}
 
-            {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
+            {errorText ? <Text style={[styles.error, { color: theme.error }]}>{errorText}</Text> : null}
           </View>
 
           <Pressable onPress={logout} style={styles.logout}>
-            <Text style={styles.logoutTextInner}>Log Out</Text>
+            <Text style={[styles.logoutTextInner, { color: theme.textSecondary }]}>Log Out</Text>
           </Pressable>
         </View>
       </View>

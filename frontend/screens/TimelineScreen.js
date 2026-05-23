@@ -20,12 +20,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import dayjs from 'dayjs';
 
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { getMyRoom, getTimeline, reactToPost, editPost, pinPost, getPinnedPosts } from '../services/api';
 import PostCard from '../components/PostCard';
 import LockedWishCard from '../components/LockedWishCard';
 
 export default function TimelineScreen({ navigation }) {
   const { user } = useContext(AuthContext);
+  const { theme } = useTheme();
   const roomId = user?.roomId || null;
 
   const [partnerName, setPartnerName] = useState('');
@@ -310,10 +312,10 @@ export default function TimelineScreen({ navigation }) {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.contentCard}>
-          <View style={styles.center}>
-            <ActivityIndicator />
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+        <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
+          <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+            <ActivityIndicator color={theme.accent} />
           </View>
         </View>
       </SafeAreaView>
@@ -322,12 +324,12 @@ export default function TimelineScreen({ navigation }) {
 
   if (errorText && posts.length === 0) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.contentCard}>
-          <View style={styles.center}>
-            <Text style={styles.errorText}>{errorText}</Text>
-            <Pressable onPress={onRefresh} style={styles.retryButton}>
-              <Text style={styles.retryText}>Retry</Text>
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+        <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
+          <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+            <Text style={[styles.errorText, { color: theme.textSecondary }]}>{errorText}</Text>
+            <Pressable onPress={onRefresh} style={[styles.retryButton, { borderColor: theme.accent }]}>
+              <Text style={[styles.retryText, { color: theme.accent }]}>Retry</Text>
             </Pressable>
           </View>
         </View>
@@ -336,21 +338,21 @@ export default function TimelineScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
       <View>
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.header }]}>
           <Text style={styles.headerLeft}>TwoSpace</Text>
           <View style={styles.partnerWrap}>
             <Text style={styles.partnerName} numberOfLines={1}>
               {partnerName || ''}
             </Text>
-            <Text style={styles.dot}>●</Text>
+            <Text style={[styles.dot, { color: theme.success }]}>●</Text>
           </View>
         </View>
         <View style={styles.divider} />
       </View>
 
-      <View style={styles.contentCard}>
+      <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
         <FlatList
           ref={flatListRef}
           data={posts}
@@ -358,16 +360,16 @@ export default function TimelineScreen({ navigation }) {
           renderItem={renderItem}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
-          style={{ backgroundColor: '#FFFFFF' }}
-          contentContainerStyle={{ backgroundColor: '#FFFFFF', paddingBottom: 80 }}
+          style={{ backgroundColor: theme.bgPrimary }}
+          contentContainerStyle={{ backgroundColor: theme.bgPrimary, paddingBottom: 80 }}
           keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
           }
           ListHeaderComponent={
             pinnedPosts.length > 0 ? (
-              <View style={styles.pinnedSection}>
-                <Text style={styles.pinnedLabel}>⭐ Pinned</Text>
+              <View style={[styles.pinnedSection, { borderBottomColor: theme.border }]}>
+                <Text style={[styles.pinnedLabel, { color: theme.pink }]}>⭐ Pinned</Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -376,7 +378,7 @@ export default function TimelineScreen({ navigation }) {
                   {pinnedPosts.map((post) => (
                     <Pressable
                       key={post._id}
-                      style={styles.pinnedCard}
+                      style={[styles.pinnedCard, { backgroundColor: theme.pinnedBg, borderColor: theme.pinnedBorder }]}
                       onLongPress={() => {
                         Alert.alert(
                           'Unpin this post?',
@@ -396,10 +398,10 @@ export default function TimelineScreen({ navigation }) {
                         );
                       }}
                     >
-                      <Text style={styles.pinnedCardText} numberOfLines={3}>
+                      <Text style={[styles.pinnedCardText, { color: theme.pinnedText }]} numberOfLines={3}>
                         {post.content || '📷 Photo'}
                       </Text>
-                      <Text style={styles.pinnedCardMeta}>
+                      <Text style={[styles.pinnedCardMeta, { color: theme.pinnedText }]}>
                         {dayjs(post.createdAt).format('MMM D')}
                       </Text>
                     </Pressable>
@@ -410,9 +412,9 @@ export default function TimelineScreen({ navigation }) {
           }
           ListEmptyComponent={
             !isLoading && posts.length === 0 ? (
-              <View style={styles.centerEmpty}>
+              <View style={[styles.centerEmpty, { backgroundColor: theme.bgPrimary }]}>
                 <Text style={styles.emptyIllustration}>✨</Text>
-                <Text style={styles.emptyText}>
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                   Your shared space is ready.{"\n"}Add your first thought.
                 </Text>
               </View>
@@ -421,14 +423,14 @@ export default function TimelineScreen({ navigation }) {
           ListFooterComponent={
             isLoadingMore ? (
               <View style={styles.footerLoading}>
-                <ActivityIndicator />
+                <ActivityIndicator color={theme.accent} />
               </View>
             ) : null
           }
         />
       </View>
 
-      <Pressable style={styles.fab} onPress={() => setFabOpen(true)}>
+      <Pressable style={[styles.fab, { backgroundColor: theme.accent, shadowColor: theme.shadow }]} onPress={() => setFabOpen(true)}>
         <Text style={styles.fabText}>+</Text>
       </Pressable>
 
@@ -440,7 +442,7 @@ export default function TimelineScreen({ navigation }) {
       >
         <View style={styles.sheetBackdrop}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setFabOpen(false)} />
-          <View style={styles.sheet}>
+          <View style={[styles.sheet, { backgroundColor: theme.bgCard }]}>
             <Pressable
               style={styles.sheetItem}
               onPress={() => {
@@ -448,7 +450,7 @@ export default function TimelineScreen({ navigation }) {
                 navigation.navigate('NewPost');
               }}
             >
-              <Text style={styles.sheetText}>Post a Thought</Text>
+              <Text style={[styles.sheetText, { color: theme.textPrimary }]}>Post a Thought</Text>
             </Pressable>
             <Pressable
               style={styles.sheetItem}
@@ -457,7 +459,7 @@ export default function TimelineScreen({ navigation }) {
                 navigation.navigate('Wish');
               }}
             >
-              <Text style={styles.sheetText}>Send Timed Wish</Text>
+              <Text style={[styles.sheetText, { color: theme.textPrimary }]}>Send Timed Wish</Text>
             </Pressable>
           </View>
         </View>
@@ -484,8 +486,8 @@ export default function TimelineScreen({ navigation }) {
           style={styles.editModalWrap}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={styles.editModalCard}>
-            <Text style={styles.editModalTitle}>
+          <View style={[styles.editModalCard, { backgroundColor: theme.bgCard }]}>
+            <Text style={[styles.editModalTitle, { color: theme.textPrimary }]}>
               Edit your post
             </Text>
             <TextInput
@@ -493,11 +495,12 @@ export default function TimelineScreen({ navigation }) {
               value={editText}
               onChangeText={setEditText}
               multiline
-              style={styles.editModalInput}
+              style={[styles.editModalInput, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
               maxLength={2000}
               placeholder="Edit your message..."
+              placeholderTextColor={theme.textMuted}
             />
-            <Text style={styles.editCounter}>
+            <Text style={[styles.editCounter, { color: theme.textMuted }]}>
               {editText.length} / 2000
             </Text>
             <View style={styles.editModalActions}>
@@ -506,9 +509,9 @@ export default function TimelineScreen({ navigation }) {
                   setEditingPost(null);
                   setEditText('');
                 }}
-                style={styles.editModalCancel}
+                style={[styles.editModalCancel, { borderColor: theme.border }]}
               >
-                <Text style={styles.editModalCancelText}>
+                <Text style={[styles.editModalCancelText, { color: theme.textSecondary }]}>
                   Cancel
                 </Text>
               </Pressable>
@@ -546,6 +549,7 @@ export default function TimelineScreen({ navigation }) {
                 disabled={!editText.trim() || isSavingEdit}
                 style={[
                   styles.editModalSave,
+                  { backgroundColor: theme.accent },
                   (!editText.trim() || isSavingEdit) && 
                     { opacity: 0.5 }
                 ]}

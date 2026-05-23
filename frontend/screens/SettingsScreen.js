@@ -15,10 +15,12 @@ import dayjs from 'dayjs';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { archiveRoom, closeRoom, getMyRoom } from '../services/api';
 
 export default function SettingsScreen({ navigation }) {
   const { user, logout, updateUser } = useContext(AuthContext);
+  const { theme, preference, setPreference } = useTheme();
 
   const [isLoadingRoom, setIsLoadingRoom] = useState(true);
   const [roomError, setRoomError] = useState('');
@@ -123,7 +125,7 @@ export default function SettingsScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Settings</Text>
         <View style={{ width: 32 }} />
@@ -132,62 +134,107 @@ export default function SettingsScreen({ navigation }) {
       <ScrollView
         style={{
           flex: 1,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.bgPrimary,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
         }}
         contentContainerStyle={{ padding: 16, paddingBottom: 28 }}
       >
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Profile</Text>
-          <Text style={styles.profileName}>{profileName}</Text>
-          <Text style={styles.profileEmail}>{profileEmail}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>Your Profile</Text>
+          <Text style={[styles.profileName, { color: theme.textPrimary }]}>{profileName}</Text>
+          <Text style={[styles.profileEmail, { color: theme.textSecondary }]}>{profileEmail}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Space</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>Your Space</Text>
 
           {isLoadingRoom ? (
             <View style={styles.roomLoading}>
-              <ActivityIndicator />
+              <ActivityIndicator color={theme.accent} />
             </View>
           ) : roomError ? (
             <View style={styles.roomErrorBox}>
-              <Text style={styles.roomErrorText}>{roomError}</Text>
-              <Pressable onPress={loadRoom} style={styles.retryButton}>
-                <Text style={styles.retryText}>Retry</Text>
+              <Text style={[styles.roomErrorText, { color: theme.textSecondary }]}>{roomError}</Text>
+              <Pressable onPress={loadRoom} style={[styles.retryButton, { borderColor: theme.accent }]}>
+                <Text style={[styles.retryText, { color: theme.accent }]}>Retry</Text>
               </Pressable>
             </View>
           ) : (
             <>
               <View style={styles.partnerRow}>
-                <Text style={styles.partnerName}>{partnerName}</Text>
+                <Text style={[styles.partnerName, { color: theme.textPrimary }]}>{partnerName}</Text>
               </View>
-              <Text style={styles.connectedSince}>Connected since {connectedSince}</Text>
+              <Text style={[styles.connectedSince, { color: theme.textSecondary }]}>Connected since {connectedSince}</Text>
               <View style={styles.statusRow}>
-                <Text style={styles.greenDot}>●</Text>
-                <Text style={styles.statusText}>Space is active</Text>
+                <Text style={[styles.greenDot, { color: theme.success }]}>●</Text>
+                <Text style={[styles.statusText, { color: theme.textPrimary }]}>Space is active</Text>
               </View>
             </>
           )}
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Danger Zone</Text>
+        <View style={[styles.section, { backgroundColor: theme.bgPrimary }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>
+            Appearance
+          </Text>
 
-          <Pressable onPress={onArchive} style={[styles.dangerBtn, styles.archiveBtn]}>
+          {['light', 'dark', 'system'].map(pref => (
+            <Pressable
+              key={pref}
+              onPress={() => setPreference(pref)}
+              style={[
+                styles.themeOption,
+                { borderColor: theme.border },
+                preference === pref && {
+                  borderColor: theme.accent,
+                  backgroundColor: theme.accentLight,
+                }
+              ]}
+            >
+              <Text style={styles.themeOptionEmoji}>
+                {pref === 'light' ? '☀️' 
+                  : pref === 'dark' ? '🌙' 
+                  : '⚙️'}
+              </Text>
+              <Text style={[
+                styles.themeOptionText,
+                { color: theme.textPrimary },
+                preference === pref && { 
+                  color: theme.accent,
+                  fontWeight: '800'
+                }
+              ]}>
+                {pref === 'light' ? 'Light' 
+                  : pref === 'dark' ? 'Dark' 
+                  : 'System default'}
+              </Text>
+              {preference === pref ? (
+                <Text style={[
+                  styles.themeCheck,
+                  { color: theme.accent }
+                ]}>✓</Text>
+              ) : null}
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>Danger Zone</Text>
+
+          <Pressable onPress={onArchive} style={[styles.dangerBtn, styles.archiveBtn, { backgroundColor: theme.bgPrimary }]}>
             <Text style={[styles.dangerText, styles.archiveText]}>Archive Space</Text>
           </Pressable>
 
-          <Pressable onPress={onDeletePermanent} style={[styles.dangerBtn, styles.deleteBtn]}>
+          <Pressable onPress={onDeletePermanent} style={[styles.dangerBtn, styles.deleteBtn, { backgroundColor: theme.bgPrimary }]}>
             <Text style={[styles.dangerText, styles.deleteText]}>Delete Space Permanently</Text>
           </Pressable>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>Account</Text>
           <Pressable onPress={onLogout}>
-            <Text style={styles.logoutText}>Log Out</Text>
+            <Text style={[styles.logoutText, { color: theme.textSecondary }]}>Log Out</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -204,19 +251,20 @@ export default function SettingsScreen({ navigation }) {
           }}
         >
           <View style={styles.modalBackdrop}>
-            <View style={styles.modalCard}>
+            <View style={[styles.modalCard, { backgroundColor: theme.bgCard }]}>
               <Text style={styles.modalTitle}>Delete Space Permanently</Text>
-              <Text style={styles.modalDesc}>
+              <Text style={[styles.modalDesc, { color: theme.textSecondary }]}>
                 Type DELETE MY SPACE below to confirm. This cannot be undone.
               </Text>
 
               <TextInput
                 placeholder="Type DELETE MY SPACE"
+                placeholderTextColor={theme.textMuted}
                 value={deleteConfirmText}
                 onChangeText={setDeleteConfirmText}
                 autoCapitalize="characters"
                 editable={!isDeletingSpace}
-                style={styles.modalInput}
+                style={[styles.modalInput, { borderColor: theme.border, color: theme.textPrimary }]}
               />
 
               <View style={styles.modalButtons}>
@@ -226,9 +274,9 @@ export default function SettingsScreen({ navigation }) {
                     setShowDeleteModal(false);
                     setDeleteConfirmText('');
                   }}
-                  style={[styles.modalBtn, styles.modalCancelBtn]}
+                  style={[styles.modalBtn, styles.modalCancelBtn, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                 >
-                  <Text style={styles.modalCancelText}>Cancel</Text>
+                  <Text style={[styles.modalCancelText, { color: theme.textSecondary }]}>Cancel</Text>
                 </Pressable>
 
                 <Pressable
@@ -459,5 +507,25 @@ const styles = StyleSheet.create({
   modalDeleteText: {
     color: '#FFFFFF',
     fontWeight: '900',
+  },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  themeOptionEmoji: {
+    fontSize: 18,
+  },
+  themeOptionText: {
+    flex: 1,
+    fontSize: 15,
+  },
+  themeCheck: {
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

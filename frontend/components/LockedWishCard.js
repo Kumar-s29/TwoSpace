@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import dayjs from 'dayjs';
+import { useTheme } from '../context/ThemeContext';
 
 export default function LockedWishCard({ post, isOwn }) {
+  const { theme } = useTheme();
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -41,16 +43,16 @@ export default function LockedWishCard({ post, isOwn }) {
       ]}
     >
       <View style={styles.row}>
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.capsuleBg, borderColor: theme.capsuleBorder }]}>
           <Text style={styles.lock}>🔒</Text>
-          <Text style={styles.label}>{label}</Text>
-          <Text style={styles.desc}>
+          <Text style={[styles.label, { color: theme.accent }]}>{label}</Text>
+          <Text style={[styles.desc, { color: theme.textSecondary }]}>
             {isOwn
               ? 'Your sealed wish — waiting to unlock'
               : 'A wish is waiting for you...'}
           </Text>
           {remaining ? (
-            <Text style={styles.countdown}>
+            <Text style={[styles.countdown, { color: theme.textSecondary }]}>
               Opens in {remaining.days} days {remaining.hours} hours
             </Text>
           ) : null}

@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import {
   addMilestone,
   deleteMilestone,
@@ -27,6 +28,7 @@ import {
 const EMOJI_PRESETS = ['❤️', '💑', '✈️', '🎂', '🏠', '⭐', '🥂', '🌟', '💍', '🎉'];
 
 export default function MilestonesScreen({ navigation }) {
+  const { theme } = useTheme();
   const { user } = useContext(AuthContext);
 
   const [milestones, setMilestones] = useState([]);
@@ -223,32 +225,33 @@ export default function MilestonesScreen({ navigation }) {
     return (
       <Pressable
         key={item._id}
-        style={styles.milestoneCard}
+        style={[styles.milestoneCard, { backgroundColor: theme.bgCard, borderColor: theme.borderLight }]}
         onLongPress={() => onDelete(item)}
       >
-        <View style={styles.emojiContainer}>
+        <View style={[styles.emojiContainer, { backgroundColor: theme.accentLight }]}>
           <Text style={styles.milestoneEmoji}>{item.emoji || '⭐'}</Text>
         </View>
         <View style={styles.milestoneDetails}>
           <View style={styles.milestoneHeaderRow}>
-            <Text style={styles.milestoneTitle} numberOfLines={1}>
+            <Text style={[styles.milestoneTitle, { color: theme.textPrimary }]} numberOfLines={1}>
               {item.title}
             </Text>
             <Text style={[
               styles.countdownText,
-              item.daysUntil === 0 && styles.todayText
+              { color: theme.accent },
+              item.daysUntil === 0 && [styles.todayText, { color: theme.success }]
             ]}>
               {item.displayText}
             </Text>
           </View>
           {item.note ? (
-            <Text style={styles.milestoneNote} numberOfLines={2}>
+            <Text style={[styles.milestoneNote, { color: theme.textSecondary }]} numberOfLines={2}>
               {item.note}
             </Text>
           ) : null}
           <View style={styles.milestoneFooterRow}>
-            <Text style={styles.milestoneDate}>{formattedDate}</Text>
-            <Text style={styles.milestoneCreator}>
+            <Text style={[styles.milestoneDate, { color: theme.textMuted }]}>{formattedDate}</Text>
+            <Text style={[styles.milestoneCreator, { color: theme.textMuted }]}>
               By {isOwn ? 'you' : creatorName}
             </Text>
           </View>
@@ -267,17 +270,17 @@ export default function MilestonesScreen({ navigation }) {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.header}>
+      <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+        <View style={[styles.header, { backgroundColor: theme.header }]}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backArrow}>‹ Back</Text>
+            <Text style={[styles.backArrow, { color: theme.headerText }]}>‹ Back</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Milestones</Text>
+          <Text style={[styles.headerTitle, { color: theme.headerText }]}>Milestones</Text>
           <View style={{ width: 50 }} />
         </View>
-        <View style={styles.contentCard}>
-          <View style={styles.center}>
-            <ActivityIndicator color="#4F46B8" size="large" />
+        <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
+          <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+            <ActivityIndicator color={theme.accent} size="large" />
           </View>
         </View>
       </SafeAreaView>
@@ -285,16 +288,16 @@ export default function MilestonesScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+      <View style={[styles.header, { backgroundColor: theme.header }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backArrow}>‹ Back</Text>
+          <Text style={[styles.backArrow, { color: theme.headerText }]}>‹ Back</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Milestones</Text>
+        <Text style={[styles.headerTitle, { color: theme.headerText }]}>Milestones</Text>
         <View style={{ width: 50 }} />
       </View>
 
-      <View style={styles.contentCard}>
+      <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
         <FlatList
           data={sectionsData}
           keyExtractor={(item) => item.title}
@@ -302,29 +305,29 @@ export default function MilestonesScreen({ navigation }) {
             <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
           }
           renderItem={({ item }) => (
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionHeading}>{item.title.toUpperCase()}</Text>
+            <View style={[styles.sectionContainer, { backgroundColor: theme.bgPrimary }]}>
+              <Text style={[styles.sectionHeading, { color: theme.textMuted }]}>{item.title.toUpperCase()}</Text>
               {item.data.map(milestone => renderMilestoneCard(milestone))}
             </View>
           )}
           ListEmptyComponent={
-            <View style={styles.emptyState}>
+            <View style={[styles.emptyState, { backgroundColor: theme.bgPrimary }]}>
               <Text style={styles.emptyEmoji}>🗓️</Text>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                 No milestones added yet.{'\n'}
                 Track anniversaries, trips, or big events together!
               </Text>
             </View>
           }
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { backgroundColor: theme.bgPrimary }]}
         />
 
         {/* Floating Add Button */}
         <Pressable
-          style={styles.floatingAddBtn}
+          style={[styles.floatingAddBtn, { backgroundColor: theme.accent }]}
           onPress={() => setShowAddModal(true)}
         >
-          <Text style={styles.floatingAddText}>+</Text>
+          <Text style={[styles.floatingAddText, { color: theme.accentText }]}>+</Text>
         </Pressable>
       </View>
 
@@ -337,16 +340,16 @@ export default function MilestonesScreen({ navigation }) {
           if (!isAdding) setShowAddModal(false);
         }}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalHeading}>New Milestone</Text>
+        <View style={[styles.modalBackdrop, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+          <View style={[styles.modalCard, { backgroundColor: theme.bgCard }]}>
+            <Text style={[styles.modalHeading, { color: theme.textPrimary }]}>New Milestone</Text>
 
             <ScrollView
               contentContainerStyle={styles.modalForm}
               keyboardShouldPersistTaps="handled"
             >
               {/* Emoji Selector */}
-              <Text style={styles.inputLabel}>Choose Emoji</Text>
+              <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Choose Emoji</Text>
               <View style={styles.emojiGrid}>
                 {EMOJI_PRESETS.map(emoji => (
                   <Pressable
@@ -354,7 +357,8 @@ export default function MilestonesScreen({ navigation }) {
                     onPress={() => setSelectedEmoji(emoji)}
                     style={[
                       styles.emojiButton,
-                      selectedEmoji === emoji && styles.emojiButtonSelected,
+                      { backgroundColor: theme.bgInput },
+                      selectedEmoji === emoji && { borderColor: theme.accent, backgroundColor: theme.accentLight },
                     ]}
                   >
                     <Text style={styles.emojiText}>{emoji}</Text>
@@ -363,29 +367,29 @@ export default function MilestonesScreen({ navigation }) {
               </View>
 
               {/* Title Input */}
-              <Text style={styles.inputLabel}>Title</Text>
+              <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Title</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
                 placeholder="Anniversary, first trip, next goal..."
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.textMuted}
                 value={newTitle}
                 onChangeText={setNewTitle}
                 maxLength={80}
               />
 
               {/* Date Input */}
-              <Text style={styles.inputLabel}>Date</Text>
+              <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Date</Text>
               <Pressable
-                style={styles.dateSelectorBox}
+                style={[styles.dateSelectorBox, { backgroundColor: theme.bgInput, borderColor: theme.border }]}
                 onPress={() => setShowDatePicker(true)}
               >
-                <Text style={styles.dateSelectorText}>
+                <Text style={[styles.dateSelectorText, { color: theme.accent }]}>
                   {dayjs(selectedDate).format('MMMM DD, YYYY')}
                 </Text>
               </Pressable>
 
               {showDatePicker || Platform.OS === 'ios' ? (
-                <View style={styles.pickerWrapper}>
+                <View style={[styles.pickerWrapper, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
                   <DateTimePicker
                     value={selectedDate}
                     mode="date"
@@ -395,21 +399,21 @@ export default function MilestonesScreen({ navigation }) {
                   />
                   {Platform.OS === 'ios' && (
                     <Pressable
-                      style={styles.iosDoneButton}
+                      style={[styles.iosDoneButton, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
                       onPress={() => setShowDatePicker(false)}
                     >
-                      <Text style={styles.iosDoneText}>Done</Text>
+                      <Text style={[styles.iosDoneText, { color: theme.accent }]}>Done</Text>
                     </Pressable>
                   )}
                 </View>
               ) : null}
 
               {/* Note Input */}
-              <Text style={styles.inputLabel}>Note (Optional)</Text>
+              <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Note (Optional)</Text>
               <TextInput
-                style={[styles.textInput, styles.multilineInput]}
+                style={[styles.textInput, styles.multilineInput, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.textPrimary }]}
                 placeholder="Add some details or a memory..."
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={theme.textMuted}
                 value={newNote}
                 onChangeText={setNewNote}
                 maxLength={300}
@@ -419,16 +423,16 @@ export default function MilestonesScreen({ navigation }) {
               {/* Recurring Toggle */}
               <View style={styles.toggleRow}>
                 <View>
-                  <Text style={styles.toggleLabel}>Recurring Yearly</Text>
-                  <Text style={styles.toggleDesc}>
+                  <Text style={[styles.toggleLabel, { color: theme.textPrimary }]}>Recurring Yearly</Text>
+                  <Text style={[styles.toggleDesc, { color: theme.textSecondary }]}>
                     Anniversaries, birthdays, yearly events
                   </Text>
                 </View>
                 <Switch
                   value={isRecurring}
                   onValueChange={setIsRecurring}
-                  trackColor={{ false: '#E5E7EB', true: '#C7D2FE' }}
-                  thumbColor={isRecurring ? '#4F46B8' : '#F3F4F6'}
+                  trackColor={{ false: theme.border, true: theme.accentLight }}
+                  thumbColor={isRecurring ? theme.accent : theme.bgMuted}
                 />
               </View>
             </ScrollView>
@@ -438,9 +442,9 @@ export default function MilestonesScreen({ navigation }) {
               <Pressable
                 onPress={() => setShowAddModal(false)}
                 disabled={isAdding}
-                style={[styles.modalBtn, styles.modalCancelBtn]}
+                style={[styles.modalBtn, styles.modalCancelBtn, { backgroundColor: theme.bgCard, borderColor: theme.border }]}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: theme.textSecondary }]}>Cancel</Text>
               </Pressable>
 
               <Pressable
@@ -449,13 +453,14 @@ export default function MilestonesScreen({ navigation }) {
                 style={[
                   styles.modalBtn,
                   styles.modalAddBtn,
+                  { backgroundColor: theme.accent },
                   (!newTitle.trim() || isAdding) && { opacity: 0.5 }
                 ]}
               >
                 {isAdding ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.modalAddText}>Add</Text>
+                  <Text style={[styles.modalAddText, { color: theme.accentText }]}>Add</Text>
                 )}
               </Pressable>
             </View>

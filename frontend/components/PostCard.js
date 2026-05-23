@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { useTheme } from '../context/ThemeContext';
 
 import { deletePost, pinPost } from '../services/api';
 
@@ -29,6 +30,7 @@ export default function PostCard({
   currentUserId,
   onReact,
 }) {
+  const { theme } = useTheme();
   const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   const initial =
@@ -39,11 +41,11 @@ export default function PostCard({
   const mood = post?.moodTag;
   const moodMeta =
     mood === 'good'
-      ? { bg: '#D1FAE5', text: '🌤 Good' }
+      ? { bg: theme.moodGoodBg, text: '🌤 Good', textColor: theme.moodGoodText }
       : mood === 'okay'
-        ? { bg: '#FEF3C7', text: '⛅ Okay' }
+        ? { bg: theme.moodOkayBg, text: '⛅ Okay', textColor: theme.moodOkayText }
         : mood === 'low'
-          ? { bg: '#DBEAFE', text: '🌧 Low' }
+          ? { bg: theme.moodLowBg, text: '🌧 Low', textColor: theme.moodLowText }
           : null;
 
   const safeReactions =
@@ -157,7 +159,7 @@ export default function PostCard({
           style={StyleSheet.absoluteFill}
           onPress={() => setShowReactionPicker(false)}
         />
-        <View style={styles.reactionPicker}>
+        <View style={[styles.reactionPicker, { backgroundColor: theme.bgCard, shadowColor: theme.shadow }]}>
           {REACTIONS.map((emoji) => (
             <Pressable
               key={emoji}
@@ -183,21 +185,21 @@ export default function PostCard({
       >
         <View style={styles.row}>
           {!isOwn ? (
-            <View style={[styles.initialCircle, styles.partnerCircle]}>
+            <View style={[styles.initialCircle, styles.partnerCircle, { backgroundColor: theme.pink }]}>
               <Text style={styles.initialText}>{initial}</Text>
             </View>
           ) : null}
 
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: theme.bgCard, shadowColor: theme.shadow }]}>
             {post?.isPinned ? (
-              <Text style={styles.pinLabel}>⭐ Pinned</Text>
+              <Text style={[styles.pinLabel, { color: theme.warning }]}>⭐ Pinned</Text>
             ) : null}
 
             {post?.content ? (
-              <Text style={styles.content}>{post.content}</Text>
+              <Text style={[styles.content, { color: theme.textPrimary }]}>{post.content}</Text>
             ) : null}
             {post?.isEdited ? (
-              <Text style={styles.editedLabel}>edited</Text>
+              <Text style={[styles.editedLabel, { color: theme.textMuted }]}>edited</Text>
             ) : null}
 
             {post?.mediaUrl ? (
@@ -218,24 +220,24 @@ export default function PostCard({
                     );
                   });
                 }}
-                style={styles.songCard}
+                style={[styles.songCard, { backgroundColor: theme.accentLight }]}
               >
                 <Text style={styles.songIcon}>🎵</Text>
                 <View style={styles.songInfo}>
-                  <Text style={styles.songTitle} numberOfLines={1}>
+                  <Text style={[styles.songTitle, { color: theme.accent }]} numberOfLines={1}>
                     {post.songTitle || 'Music Link'}
                   </Text>
-                  <Text style={styles.songSub} numberOfLines={1}>
+                  <Text style={[styles.songSub, { color: theme.textSecondary }]} numberOfLines={1}>
                     Tap to open
                   </Text>
                 </View>
-                <Text style={styles.songArrow}>›</Text>
+                <Text style={[styles.songArrow, { color: theme.accent }]}>›</Text>
               </Pressable>
             ) : null}
 
             {moodMeta ? (
               <View style={[styles.moodBadge, { backgroundColor: moodMeta.bg }]}>
-                <Text style={styles.moodText}>{moodMeta.text}</Text>
+                <Text style={[styles.moodText, { color: moodMeta.textColor || theme.textPrimary }]}>{moodMeta.text}</Text>
               </View>
             ) : null}
 
@@ -247,7 +249,8 @@ export default function PostCard({
                     key={userId}
                     style={[
                       styles.reactionBubble,
-                      userId === currentUserId ? styles.reactionBubbleOwn : null,
+                      { backgroundColor: theme.bgSecondary, borderColor: theme.border },
+                      userId === currentUserId ? [styles.reactionBubbleOwn, { backgroundColor: theme.accentLight, borderColor: theme.accent }] : null,
                     ]}
                   >
                     <Text style={styles.reactionBubbleText}>{emoji}</Text>
@@ -257,19 +260,19 @@ export default function PostCard({
             ) : null}
 
             <View style={styles.metaRow}>
-              <Text style={styles.metaText}>
+              <Text style={[styles.metaText, { color: theme.textSecondary }]}>
                 {post?.createdAt ? dayjs(post.createdAt).fromNow() : ''}
               </Text>
               {post?.replyCount > 0 ? (
                 <Pressable onPress={() => {}}>
-                  <Text style={styles.metaLink}>{post.replyCount} replies</Text>
+                  <Text style={[styles.metaLink, { color: theme.textSecondary }]}>{post.replyCount} replies</Text>
                 </Pressable>
               ) : null}
             </View>
           </View>
 
           {isOwn ? (
-            <View style={[styles.initialCircle, styles.ownCircle]}>
+            <View style={[styles.initialCircle, styles.ownCircle, { backgroundColor: theme.accent }]}>
               <Text style={styles.initialText}>{initial}</Text>
             </View>
           ) : null}

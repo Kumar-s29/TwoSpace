@@ -15,6 +15,7 @@ Notifications.setNotificationHandler({
 });
 
 import { AuthContext, AuthProvider } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
@@ -55,25 +56,27 @@ function SetupStackNavigator() {
 }
 
 function MainTabs() {
+  const { theme } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: theme.tabBar,
           borderTopWidth: 0.5,
-          borderTopColor: '#E5E7EB',
+          borderTopColor: theme.tabBarBorder,
           height: 60,
           paddingBottom: 8,
           paddingTop: 6,
           elevation: 8,
-          shadowColor: '#000',
+          shadowColor: theme.shadow,
           shadowOpacity: 0.08,
           shadowRadius: 8,
           shadowOffset: { width: 0, height: -2 },
         },
-        tabBarActiveTintColor: '#4F46B8',
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor: theme.accent,
+        tabBarInactiveTintColor: theme.textMuted,
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '600',
@@ -215,10 +218,12 @@ function RootNavigator() {
     registerForPushNotifications();
   }, [token]);
 
+  const { theme } = useTheme();
+
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4F46B8' }}>
-        <ActivityIndicator color="#FFFFFF" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.header }}>
+        <ActivityIndicator color={theme.headerText} />
       </View>
     );
   }
@@ -234,13 +239,15 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-      {showSplash ? (
-        <SplashScreen onFinish={() => setShowSplash(false)} />
-      ) : null}
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+        {showSplash ? (
+          <SplashScreen onFinish={() => setShowSplash(false)} />
+        ) : null}
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -13,11 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { io } from 'socket.io-client';
 
 import { AuthContext } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { getWishes } from '../services/api';
 import LockedWishCard from '../components/LockedWishCard';
 
 export default function WishesScreen({ navigation }) {
   const { user } = useContext(AuthContext);
+  const { theme } = useTheme();
   const roomId = user?.roomId || null;
 
   const [activeTab, setActiveTab] = useState('received'); // 'received' | 'sent'
@@ -110,25 +112,27 @@ export default function WishesScreen({ navigation }) {
     const initial = isOwn
       ? (user?.displayName?.[0] || 'Y').toUpperCase()
       : (item?.authorName?.[0] || 'P').toUpperCase();
-    const circleStyle = isOwn ? styles.circlePurple : styles.circlePink;
+    const circleStyle = isOwn
+      ? [styles.circlePurple, { backgroundColor: theme.accent }]
+      : [styles.circlePink, { backgroundColor: theme.pink }];
     const label =
       typeof item?.label === 'string' && item.label.trim().length > 0
         ? item.label.trim()
         : null;
 
     return (
-      <View style={styles.unlockedCard}>
+      <View style={[styles.unlockedCard, { backgroundColor: theme.accentLight, borderColor: theme.border, borderWidth: 1 }]}>
         <View style={styles.unlockedTop}>
           <Text style={styles.envelopeIcon}>💌</Text>
-          {label ? <Text style={styles.wishLabel}>{label}</Text> : null}
+          {label ? <Text style={[styles.wishLabel, { color: theme.accent }]}>{label}</Text> : null}
         </View>
-        <Text style={styles.wishContent}>{item?.content || ''}</Text>
+        <Text style={[styles.wishContent, { color: theme.textPrimary }]}>{item?.content || ''}</Text>
         <View style={styles.unlockedBottom}>
           <View style={[styles.authorCircle, circleStyle]}>
             <Text style={styles.authorInitial}>{initial}</Text>
           </View>
           {item?.unlocksAt ? (
-            <Text style={styles.openedDate}>
+            <Text style={[styles.openedDate, { color: theme.textMuted }]}>
               Opened on {dayjs(item.unlocksAt).format('MMM D, YYYY')}
             </Text>
           ) : null}
@@ -140,7 +144,7 @@ export default function WishesScreen({ navigation }) {
   const EmptyReceived = () => (
     <View style={styles.emptyBox}>
       <Text style={styles.emptyIcon}>⏰</Text>
-      <Text style={styles.emptyText}>
+      <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
         No wishes received yet.{'\n'}Send one first and they might return the favour.
       </Text>
     </View>
@@ -149,50 +153,50 @@ export default function WishesScreen({ navigation }) {
   const EmptySent = () => (
     <View style={styles.emptyBox}>
       <Text style={styles.emptyIcon}>✨</Text>
-      <Text style={styles.emptyText}>
+      <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
         No wishes sent yet.{'\n'}Tap + to send your first timed wish.
       </Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.header }]}>
         <Text style={styles.headerTitle}>Wishes</Text>
       </View>
 
       {/* White card content */}
-      <View style={styles.contentCard}>
+      <View style={[styles.contentCard, { backgroundColor: theme.bgPrimary }]}>
         {/* Toggle tabs */}
-        <View style={styles.tabRow}>
+        <View style={[styles.tabRow, { borderBottomColor: theme.border }]}>
           <Pressable
-            style={[styles.tabItem, activeTab === 'received' && styles.tabItemActive]}
+            style={[styles.tabItem, activeTab === 'received' && [styles.tabItemActive, { borderBottomColor: theme.accent }]]}
             onPress={() => setActiveTab('received')}
           >
-            <Text style={[styles.tabLabel, activeTab === 'received' && styles.tabLabelActive]}>
+            <Text style={[styles.tabLabel, { color: theme.textMuted }, activeTab === 'received' && [styles.tabLabelActive, { color: theme.accent }]]}>
               Received
             </Text>
           </Pressable>
           <Pressable
-            style={[styles.tabItem, activeTab === 'sent' && styles.tabItemActive]}
+            style={[styles.tabItem, activeTab === 'sent' && [styles.tabItemActive, { borderBottomColor: theme.accent }]]}
             onPress={() => setActiveTab('sent')}
           >
-            <Text style={[styles.tabLabel, activeTab === 'sent' && styles.tabLabelActive]}>
+            <Text style={[styles.tabLabel, { color: theme.textMuted }, activeTab === 'sent' && [styles.tabLabelActive, { color: theme.accent }]]}>
               Sent
             </Text>
           </Pressable>
         </View>
 
         {isLoading ? (
-          <View style={styles.center}>
-            <ActivityIndicator color="#4F46B8" />
+          <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+            <ActivityIndicator color={theme.accent} />
           </View>
         ) : errorText ? (
-          <View style={styles.center}>
-            <Text style={styles.errorText}>{errorText}</Text>
-            <Pressable onPress={onRefresh} style={styles.retryButton}>
-              <Text style={styles.retryText}>Retry</Text>
+          <View style={[styles.center, { backgroundColor: theme.bgPrimary }]}>
+            <Text style={[styles.errorText, { color: theme.textSecondary }]}>{errorText}</Text>
+            <Pressable onPress={onRefresh} style={[styles.retryButton, { borderColor: theme.accent }]}>
+              <Text style={[styles.retryText, { color: theme.accent }]}>Retry</Text>
             </Pressable>
           </View>
         ) : (
@@ -202,8 +206,8 @@ export default function WishesScreen({ navigation }) {
             renderItem={renderWishItem}
             contentContainerStyle={
               displayList.length === 0
-                ? styles.emptyListContainer
-                : styles.listContainer
+                ? [styles.emptyListContainer, { backgroundColor: theme.bgPrimary }]
+                : [styles.listContainer, { backgroundColor: theme.bgPrimary }]
             }
             refreshControl={
               <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
@@ -217,7 +221,7 @@ export default function WishesScreen({ navigation }) {
 
       {/* FAB */}
       <Pressable
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: theme.accent, shadowColor: theme.shadow }]}
         onPress={() => navigation.navigate('Wish')}
       >
         <Text style={styles.fabText}>+</Text>

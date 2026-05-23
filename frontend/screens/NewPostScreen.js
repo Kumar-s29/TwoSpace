@@ -15,8 +15,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createPost, uploadImage } from '../services/api';
 import MoodPicker from '../components/MoodPicker';
+import { useTheme } from '../context/ThemeContext';
 
 export default function NewPostScreen({ navigation }) {
+  const { theme } = useTheme();
   const [content, setContent] = useState('');
   const [moodTag, setMoodTag] = useState(null);
   const [imageUri, setImageUri] = useState(null);
@@ -135,13 +137,13 @@ export default function NewPostScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.header }]}>
+      <View style={[styles.header, { backgroundColor: theme.header }]}>
         <Pressable onPress={() => navigation.goBack()} disabled={isSubmitting}>
-          <Text style={styles.cancel}>Cancel</Text>
+          <Text style={[styles.cancel, { color: theme.headerText, opacity: 0.8 }]}>Cancel</Text>
         </Pressable>
 
-        <Text style={styles.headerTitle}>New Thought</Text>
+        <Text style={[styles.headerTitle, { color: theme.headerText }]}>New Thought</Text>
 
         <Pressable onPress={onSubmit} disabled={!canPost}>
           {isSubmitting ? (
@@ -158,7 +160,7 @@ export default function NewPostScreen({ navigation }) {
         style={[
           styles.scrollView,
           {
-            backgroundColor: '#FFFFFF',
+            backgroundColor: theme.bgPrimary,
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
           },
@@ -185,10 +187,11 @@ export default function NewPostScreen({ navigation }) {
           value={content}
           onChangeText={setContent}
           placeholder="What's on your mind?"
+          placeholderTextColor={theme.textMuted}
           autoFocus
           multiline
           maxLength={2000}
-          style={styles.input}
+          style={[styles.input, { color: theme.textPrimary }]}
           editable={!isSubmitting}
         />
 
@@ -201,26 +204,26 @@ export default function NewPostScreen({ navigation }) {
         <MoodPicker value={moodTag} onChange={setMoodTag} />
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: theme.bgCard, borderTopColor: theme.border }]}>
         <Pressable onPress={onPickImage} disabled={isSubmitting} style={styles.bottomBarBtn}>
-          <Text style={styles.bottomBarText}>📷 Photo</Text>
+          <Text style={[styles.bottomBarText, { color: theme.textSecondary }]}>📷 Photo</Text>
         </Pressable>
 
-        <View style={styles.bottomBarDivider} />
+        <View style={[styles.bottomBarDivider, { backgroundColor: theme.border }]} />
 
         <Pressable
           onPress={() => setShowSongInput((v) => !v)}
           disabled={isSubmitting}
           style={styles.bottomBarBtn}
         >
-          <Text style={[styles.bottomBarText, songUrl && { color: '#4F46B8' }]}>
+          <Text style={[styles.bottomBarText, { color: theme.textSecondary }, songUrl && { color: theme.accent }]}>
             🎵 Song
           </Text>
         </Pressable>
       </View>
 
       {showSongInput ? (
-        <View style={styles.songInputWrap}>
+        <View style={[styles.songInputWrap, { backgroundColor: theme.bgInput, borderTopColor: theme.border }]}>
           <TextInput
             value={songUrl}
             onChangeText={(text) => {
@@ -228,9 +231,10 @@ export default function NewPostScreen({ navigation }) {
               setSongTitle(extractSongTitle(text));
             }}
             placeholder="Paste Spotify or YouTube link..."
+            placeholderTextColor={theme.textMuted}
             autoCapitalize="none"
             autoCorrect={false}
-            style={styles.songInput}
+            style={[styles.songInput, { color: theme.textPrimary }]}
             keyboardType="url"
             editable={!isSubmitting}
           />
@@ -241,7 +245,7 @@ export default function NewPostScreen({ navigation }) {
                 setSongTitle('');
               }}
             >
-              <Text style={styles.songClear}>✕</Text>
+              <Text style={[styles.songClear, { color: theme.textMuted }]}>✕</Text>
             </Pressable>
           ) : null}
         </View>
